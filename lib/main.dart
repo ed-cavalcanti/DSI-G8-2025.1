@@ -1,6 +1,8 @@
 import 'package:diainfo/features/auth/screens/login/login_screen.dart';
 import 'package:diainfo/features/auth/screens/signup/signup_screen.dart';
 import 'package:diainfo/features/auth/screens/dashboard/dashboard_screen.dart';
+import 'package:diainfo/features/auth/screens/recoverypass/recoverypass_screen.dart';
+
 import 'package:diainfo/utils/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,11 +24,12 @@ class MyApp extends StatelessWidget {
       title: 'Diainfo',
       theme: AppTheme.lightTheme,
       home: SignupScreen(),
-      initialRoute: '/Login',
+      initialRoute: '/login',
       routes: {
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignupScreen(),
         '/dashboard': (context) => DashboardScreen(),
+        '/recoverypass':(context) => RecoverypassScreen(),
       },
     );
   }

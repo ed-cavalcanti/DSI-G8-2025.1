@@ -108,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const Text('Esqueceu sua senha? '),
                                 GestureDetector(
                                   onTap: () {
-                                    Navigator.pushNamed(context, '/PasswordRecovery');
+                                    Navigator.pushNamed(context, '/recoverypass');
                                   },
                                   child: const Text(
                                     'Toque Aqui',
