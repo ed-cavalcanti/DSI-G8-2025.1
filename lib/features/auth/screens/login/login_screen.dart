@@ -56,7 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: appDefaultSize),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: appDefaultSize,
+                  ),
                   child: Column(
                     children: [
                       // Título no topo
@@ -108,7 +110,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const Text('Esqueceu sua senha? '),
                                 GestureDetector(
                                   onTap: () {
-                                    Navigator.pushNamed(context, '/recoverypass');
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/recoverypass',
+                                    );
                                   },
                                   child: const Text(
                                     'Toque Aqui',

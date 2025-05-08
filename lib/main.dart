@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginScreen(),
         '/signup': (context) => SignupScreen(),
         '/dashboard': (context) => DashboardScreen(),
-        '/recoverypass':(context) => RecoverypassScreen(),
+        '/recoverypass': (context) => RecoverypassScreen(),
       },
     );
   }
