@@ -6,8 +6,160 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard')),
-      body: const Center(child: Text('Bem-vindo à tela Dashboard!')),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Topo com logo e saudação
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Diainfo',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF4A74DA),
+                    ),
+                  ),
+                  Row(
+                    children: const [
+                      Text('Olá, ', style: TextStyle(fontSize: 16)),
+                      Text('Marco', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      SizedBox(width: 6),
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundImage: AssetImage('avatar.png'),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+
+              const SizedBox(height: 30),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Dashboard',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Histórico de glicemia',
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+              // Gráfico mockado
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: const Color(0xFFF3F6FA),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        Text('Janeiro', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Image.asset('assets/grafico.png', height: 120),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+          
+
+              const SizedBox(height: 30),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Últimos Check-Ups',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () {
+                    // ação para ver mais check-ups
+                  },
+                  child: Text('ver mais >', style: TextStyle(color: Colors.grey)),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+              _buildCheckupItem('10/01/2025', 'Moderado', Colors.yellow),
+              _buildCheckupItem('03/01/2025', 'Alto', Colors.red),
+              _buildCheckupItem('01/10/2024', 'Baixo', Colors.green),
+
+              const SizedBox(height: 30),
+                  SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('cadastrar glicemia diária'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A74DA),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        selectedItemColor: const Color(0xFF4A74DA),
+        unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.location_on), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.healing), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: ''),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCheckupItem(String date, String risk, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: const Color(0xFFF3F6FA),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(date, style: const TextStyle(fontSize: 14)),
+          Row(
+            children: [
+              Text('Risco: $risk', style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 6),
+              CircleAvatar(radius: 6, backgroundColor: color),
+            ],
+          )
+        ],
+      ),
     );
   }
 }
