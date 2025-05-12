@@ -1,3 +1,5 @@
+import 'package:diainfo/commom_widgets/section_header.dart';
+import 'package:diainfo/constants/sizes.dart';
 import 'package:flutter/material.dart';
 
 class RecoverypassScreen extends StatelessWidget {
@@ -8,11 +10,6 @@ class RecoverypassScreen extends StatelessWidget {
     final TextEditingController emailController = TextEditingController();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recuperação de Senha'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
       extendBodyBehindAppBar: true,
       body: SizedBox.expand(
         child: Stack(
@@ -24,15 +21,20 @@ class RecoverypassScreen extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
+              padding: const EdgeInsets.all(appDefaultSize),
+              child: SafeArea(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    SectionHeader(
+                      title: "Recuperar senha",
+                      navigateBack: "/login",
+                    ),
+                    const SizedBox(height: 40),
                     const Text(
                       'Digite seu e-mail para recuperação de senha:',
-                      style: TextStyle(fontSize: 26, color: Colors.black),
-                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, color: Colors.black),
+                      textAlign: TextAlign.left,
                     ),
                     const SizedBox(height: 20),
                     TextField(
@@ -46,12 +48,22 @@ class RecoverypassScreen extends StatelessWidget {
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Confirmar'),
+                    const SizedBox(height: 460),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4A74DA),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('Confirmar'),
+                      ),
                     ),
                   ],
                 ),

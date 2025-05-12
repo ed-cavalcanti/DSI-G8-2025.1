@@ -1,4 +1,6 @@
+import 'package:diainfo/commom_widgets/column_chart.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
+import 'package:diainfo/constants/colors.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -54,15 +56,16 @@ class DashboardScreen extends StatelessWidget {
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
+              const SizedBox(height: 16),
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Histórico de glicemia',
-                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                  style: TextStyle(fontSize: 18, color: textPrimaryColor),
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
               // Gráfico mockado
               Container(
                 width: double.infinity,
@@ -78,45 +81,20 @@ class DashboardScreen extends StatelessWidget {
                       children: const [
                         Text(
                           'Janeiro',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    // Image.asset('assets/grafico.png', height: 120),
+                    ColumnChart(),
                   ],
                 ),
               ),
 
               const SizedBox(height: 20),
-
-              const SizedBox(height: 30),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Últimos Check-Ups',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () {
-                    // ação para ver mais check-ups
-                  },
-                  child: Text(
-                    'ver mais >',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-              _buildCheckupItem('10/01/2025', 'Moderado', Colors.yellow),
-              _buildCheckupItem('03/01/2025', 'Alto', Colors.red),
-              _buildCheckupItem('01/10/2024', 'Baixo', Colors.green),
-
-              const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -132,6 +110,37 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 30),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Últimos Check-Ups',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // ação para ver mais check-ups
+                      },
+                      child: const Text(
+                        'ver mais >',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 10),
+              _buildCheckupItem('10/01/2025', 'Moderado', Colors.yellow),
+              _buildCheckupItem('03/01/2025', 'Alto', Colors.red),
+              _buildCheckupItem('01/10/2024', 'Baixo', Colors.green),
             ],
           ),
         ),
@@ -143,7 +152,7 @@ class DashboardScreen extends StatelessWidget {
   Widget _buildCheckupItem(String date, String risk, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         color: const Color(0xFFF3F6FA),

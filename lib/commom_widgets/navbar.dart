@@ -25,7 +25,7 @@ class Navbar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(10),
+            color: Colors.black.withAlpha(20),
             blurRadius: 20,
             spreadRadius: 8,
           ),
