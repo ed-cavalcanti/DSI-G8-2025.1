@@ -1,3 +1,4 @@
+import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:flutter/material.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -28,14 +29,20 @@ class DashboardScreen extends StatelessWidget {
                   Row(
                     children: const [
                       Text('Olá, ', style: TextStyle(fontSize: 16)),
-                      Text('Marco', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        'Marco',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       SizedBox(width: 6),
                       CircleAvatar(
                         radius: 16,
                         backgroundImage: AssetImage('avatar.png'),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
 
@@ -69,17 +76,19 @@ class DashboardScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
-                        Text('Janeiro', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          'Janeiro',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Image.asset('assets/grafico.png', height: 120),
+                    // Image.asset('assets/grafico.png', height: 120),
                   ],
                 ),
               ),
 
               const SizedBox(height: 20),
-          
 
               const SizedBox(height: 30),
               const Align(
@@ -95,7 +104,10 @@ class DashboardScreen extends StatelessWidget {
                   onPressed: () {
                     // ação para ver mais check-ups
                   },
-                  child: Text('ver mais >', style: TextStyle(color: Colors.grey)),
+                  child: Text(
+                    'ver mais >',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ),
 
@@ -105,7 +117,7 @@ class DashboardScreen extends StatelessWidget {
               _buildCheckupItem('01/10/2024', 'Baixo', Colors.green),
 
               const SizedBox(height: 30),
-                  SizedBox(
+              SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () {},
@@ -124,18 +136,7 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        selectedItemColor: const Color(0xFF4A74DA),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.location_on), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.healing), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: ''),
-        ],
-      ),
+      bottomNavigationBar: Navbar(),
     );
   }
 
@@ -157,7 +158,7 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(width: 6),
               CircleAvatar(radius: 6, backgroundColor: color),
             ],
-          )
+          ),
         ],
       ),
     );

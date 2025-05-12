@@ -1,8 +1,7 @@
-import 'package:diainfo/features/auth/screens/login/login_screen.dart';
-import 'package:diainfo/features/auth/screens/signup/signup_screen.dart';
 import 'package:diainfo/features/auth/screens/dashboard/dashboard_screen.dart';
+import 'package:diainfo/features/auth/screens/login/login_screen.dart';
 import 'package:diainfo/features/auth/screens/recoverypass/recoverypass_screen.dart';
-
+import 'package:diainfo/features/auth/screens/signup/signup_screen.dart';
 import 'package:diainfo/utils/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
