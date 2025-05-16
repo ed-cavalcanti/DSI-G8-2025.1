@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "770573242070",
+    "project_id": "diainfo-1e967",
+    "storage_bucket": "diainfo-1e967.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770573242070:android:169cc228a1903d52520377",
+        "android_client_info": {
+          "package_name": "com.example.diainfo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiAtHDRSltw1ze199kd3ESmXtHZQ0RS_U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
