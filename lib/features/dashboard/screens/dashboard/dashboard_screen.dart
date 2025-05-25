@@ -16,7 +16,7 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Topo com logo e saudação
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -28,22 +28,28 @@ class DashboardScreen extends StatelessWidget {
                       color: Color(0xFF4A74DA),
                     ),
                   ),
-                  Row(
-                    children: const [
-                      Text('Olá, ', style: TextStyle(fontSize: 16)),
-                      Text(
-                        'Marco',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/profile');
+                    },
+                    borderRadius: BorderRadius.circular(30),
+                    child: Row(
+                      children: const [
+                        Text('Olá, ', style: TextStyle(fontSize: 16)),
+                        Text(
+                          'Marco',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 6),
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundImage: AssetImage('avatar.png'),
-                      ),
-                    ],
+                        SizedBox(width: 6),
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: AssetImage('avatar.png'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -145,7 +151,20 @@ class DashboardScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: Navbar(),
+      bottomNavigationBar: Navbar(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 0) return;
+          final routes = [
+            '/dashboard',
+            '/map',
+            '/health',
+            '/status',
+            '/profile',
+          ];
+          Navigator.pushReplacementNamed(context, routes[index]);
+        },
+      ),
     );
   }
 

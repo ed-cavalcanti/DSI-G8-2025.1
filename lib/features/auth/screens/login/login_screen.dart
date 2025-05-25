@@ -18,7 +18,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final email = _emailController.text.trim();
       final senha = _senhaController.text;
 
-      if (email == 'teste@email.com' && senha == '12345') {
+      if (email == 'teste@email.com' && senha == '123456') {
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
