@@ -19,7 +19,7 @@ class Navbar extends StatelessWidget {
   final List<String> navRoutes = [
     '/dashboard',
     '/map',
-    '/health',
+    '/glicemia',
     '/status',
     '/profile',
   ];
@@ -51,11 +51,19 @@ class Navbar extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
+                if (index == 2) {
+                  if (ModalRoute.of(context)?.settings.name != '/glicemia') {
+                    Navigator.pushReplacementNamed(context, '/glicemia');
+                  }
+                  return;
+                }
+
                 if (onTap != null) {
                   onTap!(index);
                 } else {
-                  // Navegação direta
-                  if (ModalRoute.of(context)?.settings.name != navRoutes[index]) {
+                  // 🔗 Navigate to other routes
+                  if (ModalRoute.of(context)?.settings.name !=
+                      navRoutes[index]) {
                     Navigator.pushReplacementNamed(context, navRoutes[index]);
                   }
                 }
