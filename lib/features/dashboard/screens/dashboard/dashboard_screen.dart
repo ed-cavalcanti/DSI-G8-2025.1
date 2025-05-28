@@ -25,7 +25,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Topo com logo e saudação
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -53,6 +53,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         // backgroundImage: AssetImage('avatar.png'),
                       ),
                     ],
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/profile');
+                    },
+                    borderRadius: BorderRadius.circular(30),
+                    child: Row(
+                      children: const [
+                        Text('Olá, ', style: TextStyle(fontSize: 16)),
+                        Text(
+                          'Marco',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        SizedBox(width: 6),
+                        CircleAvatar(
+                          radius: 16,
+                          backgroundImage: AssetImage('avatar.png'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -163,7 +185,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Navbar(),
+      bottomNavigationBar: Navbar(
+        currentIndex: 0,
+        onTap: (index) {
+          if (index == 0) return;
+          final routes = [
+            '/dashboard',
+            '/map',
+            '/health',
+            '/status',
+            '/profile',
+          ];
+          Navigator.pushReplacementNamed(context, routes[index]);
+        },
+      ),
     );
   }
 
