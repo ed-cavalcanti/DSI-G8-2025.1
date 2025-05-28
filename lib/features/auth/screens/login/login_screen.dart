@@ -1,4 +1,6 @@
 import 'package:diainfo/constants/sizes.dart';
+import 'package:diainfo/features/auth/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,21 +13,33 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String? errorMessage = '';
+  bool _isLoading = false;
 
-  void _login() {
-    if (_formKey.currentState!.validate()) {
-      final email = _emailController.text.trim();
-      final senha = _senhaController.text;
-
-      if (email == 'teste@email.com' && senha == '123456') {
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email ou senha incorretos')),
-        );
-      }
+  Future<void> signInWithEmailAndPassword() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      await Auth().signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      Navigator.pushReplacementNamed(context, '/tree');
+    } on FirebaseAuthException {
+      _showMessage('Email ou senha incorretos');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
+  }
+
+  void _showMessage(String? message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message!), backgroundColor: Colors.redAccent),
+    );
   }
 
   String? _validateEmail(String? value) {
@@ -93,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(height: 20),
                             TextFormField(
-                              controller: _senhaController,
+                              controller: _passwordController,
                               validator: _validateSenha,
                               obscureText: true,
                               decoration: InputDecoration(
@@ -130,17 +144,33 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: double.infinity,
                               height: appButtonHeight,
                               child: ElevatedButton(
-                                onPressed: _login,
+                                onPressed:
+                                    _isLoading
+                                        ? null
+                                        : signInWithEmailAndPassword,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF4A74DA),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                                child: const Text(
-                                  'Entrar',
-                                  style: TextStyle(fontSize: 16),
-                                ),
+                                child:
+                                    _isLoading
+                                        ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                  Colors.white,
+                                                ),
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Entrar',
+                                          style: TextStyle(fontSize: 16),
+                                        ),
                               ),
                             ),
                           ],

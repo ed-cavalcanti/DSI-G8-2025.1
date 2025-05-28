@@ -1,10 +1,19 @@
 import 'package:diainfo/commom_widgets/column_chart.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/constants/colors.dart';
+import 'package:diainfo/features/auth/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final User? user = Auth().currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +37,22 @@ class DashboardScreen extends StatelessWidget {
                       color: Color(0xFF4A74DA),
                     ),
                   ),
+                  Row(
+                    children: [
+                      Text('Olá, ', style: TextStyle(fontSize: 16)),
+                      Text(
+                        user?.displayName ?? '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      CircleAvatar(
+                        radius: 16,
+                        // backgroundImage: AssetImage('avatar.png'),
+                      ),
+                    ],
                   InkWell(
                     onTap: () {
                       Navigator.pushNamed(context, '/profile');
@@ -53,7 +78,6 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-
               const SizedBox(height: 30),
               const Align(
                 alignment: Alignment.centerLeft,
@@ -114,6 +138,16 @@ class DashboardScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
+                ),
+              ),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await Auth().signOut();
+                  },
+                  child: Text('Logout'),
                 ),
               ),
 
