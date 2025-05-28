@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
+import 'package:diainfo/features/auth/auth.dart';
+import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -22,10 +23,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               const Text(
                 'Nome Completo',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 30),
               _buildTextField(label: 'Nome', initialValue: ''),
@@ -69,6 +67,16 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await Auth().signOut();
+                  },
+                  child: Text('Logout'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () {},
                   style: OutlinedButton.styleFrom(
@@ -95,8 +103,8 @@ class ProfileScreen extends StatelessWidget {
           final routes = [
             '/dashboard',
             '/map',
-            '/health',
-            '/status',
+            '/glicemia',
+            '/checkup',
             '/profile',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);
@@ -105,14 +113,15 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField({required String label, required String initialValue}) {
+  Widget _buildTextField({
+    required String label,
+    required String initialValue,
+  }) {
     return TextFormField(
       initialValue: initialValue,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         focusedBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Color(0xFF4A74DA)),
           borderRadius: BorderRadius.circular(8),
