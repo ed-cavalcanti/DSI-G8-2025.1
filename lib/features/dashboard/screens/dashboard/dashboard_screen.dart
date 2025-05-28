@@ -25,7 +25,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -53,28 +52,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         // backgroundImage: AssetImage('avatar.png'),
                       ),
                     ],
-                  InkWell(
-                    onTap: () {
-                      Navigator.pushNamed(context, '/profile');
-                    },
-                    borderRadius: BorderRadius.circular(30),
-                    child: Row(
-                      children: const [
-                        Text('Olá, ', style: TextStyle(fontSize: 16)),
-                        Text(
-                          'Marco',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(width: 6),
-                        CircleAvatar(
-                          radius: 16,
-                          backgroundImage: AssetImage('avatar.png'),
-                        ),
-                      ],
-                    ),
                   ),
                 ],
               ),
@@ -141,16 +118,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await Auth().signOut();
-                  },
-                  child: Text('Logout'),
-                ),
-              ),
-
               const SizedBox(height: 30),
               Align(
                 alignment: Alignment.centerLeft,
@@ -192,8 +159,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final routes = [
             '/dashboard',
             '/map',
-            '/health',
-            '/status',
+            '/glicemia',
+            '/checkup',
             '/profile',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);

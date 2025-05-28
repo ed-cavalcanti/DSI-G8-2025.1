@@ -178,7 +178,7 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
             '/dashboard',
             '/map',
             '/glicemia',
-            '/status',
+            '/checkup',
             '/profile',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);
@@ -298,7 +298,7 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
 
                     setState(() {
                       if (isEdit) {
-                        registros[indexEditar!] = novoRegistro;
+                        registros[indexEditar] = novoRegistro;
                       } else {
                         registros.insert(0, novoRegistro);
                       }

@@ -4,8 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class Navbar extends StatelessWidget {
   final int currentIndex;
-  final ValueChanged<int>? onTap;
-
+  final Function(int)? onTap;
   Navbar({super.key, this.currentIndex = 0, this.onTap});
 
   final List<PhosphorIconData Function([PhosphorIconsStyle])> navIcons = [
@@ -14,14 +13,6 @@ class Navbar extends StatelessWidget {
     PhosphorIcons.drop,
     PhosphorIcons.pulse,
     PhosphorIcons.user,
-  ];
-
-  final List<String> navRoutes = [
-    '/dashboard',
-    '/map',
-    '/glicemia',
-    '/status',
-    '/profile',
   ];
 
   @override
@@ -34,7 +25,7 @@ class Navbar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(20),
+            color: Colors.black.withAlpha(10),
             blurRadius: 20,
             spreadRadius: 8,
           ),
@@ -45,32 +36,13 @@ class Navbar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(navIcons.length, (index) {
           final isSelected = index == currentIndex;
-
           return Material(
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () {
-                if (index == 2) {
-                  if (ModalRoute.of(context)?.settings.name != '/glicemia') {
-                    Navigator.pushReplacementNamed(context, '/glicemia');
-                  }
-                  return;
-                }
-
-                if (onTap != null) {
-                  onTap!(index);
-                } else {
-                  // 🔗 Navigate to other routes
-                  if (ModalRoute.of(context)?.settings.name !=
-                      navRoutes[index]) {
-                    Navigator.pushReplacementNamed(context, navRoutes[index]);
-                  }
-                }
-              },
+              onTap: onTap != null ? () => onTap!(index) : null,
               child: Container(
                 alignment: Alignment.center,
-                padding: const EdgeInsets.all(12),
                 child: PhosphorIcon(
                   isSelected
                       ? navIcons[index](PhosphorIconsStyle.fill)
