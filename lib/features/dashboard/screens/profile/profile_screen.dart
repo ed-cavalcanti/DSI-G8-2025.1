@@ -5,6 +5,36 @@ import 'package:flutter/material.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: const Text('Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context), // Fecha o modal
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () async {
+              Navigator.pop(context); // Fecha o modal
+              //await Auth().deleteAccount(); // Simula a função de deletar conta
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Conta deletada com sucesso')),
+              );
+              Navigator.pushReplacementNamed(context, '/'); // Redireciona
+            },
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -16,7 +46,7 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 50,
                 backgroundImage: AssetImage('assets/avatar.png'),
               ),
@@ -50,7 +80,9 @@ class ProfileScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/changepass');
+                  },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Color(0xFF4A74DA)),
@@ -70,15 +102,23 @@ class ProfileScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () async {
                     await Auth().signOut();
+                    Navigator.pushReplacementNamed(context, '/login');
                   },
-                  child: Text('Logout'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Logout'),
                 ),
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
-                  onPressed: () {},
+                  onPressed: () => _showDeleteConfirmation(context),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Colors.red),
