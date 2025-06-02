@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/constants/colors.dart';
 import 'package:diainfo/features/auth/auth.dart';
@@ -33,46 +34,7 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Diainfo',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A74DA),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/profile');
-                          },
-                          borderRadius: BorderRadius.circular(30),
-                          child: Row(
-                            children: [
-                              const Text(
-                                'Olá, ',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              Text(
-                                Auth().currentUser?.displayName ?? '',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              const CircleAvatar(
-                                radius: 16,
-                                // backgroundImage: AssetImage('avatar.png'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
+                    AppHeader(),
                     const SizedBox(height: 30),
 
                     const Align(
