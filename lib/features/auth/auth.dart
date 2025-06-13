@@ -44,6 +44,13 @@ class Auth {
     }
   }
 
+  Future<void> updateProfilePhoto({required String photoUrl}) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.updatePhotoURL(photoUrl);
+    }
+  }
+
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,

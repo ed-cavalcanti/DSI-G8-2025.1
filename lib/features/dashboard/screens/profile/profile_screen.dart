@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/features/auth/auth.dart';
+import 'package:diainfo/services/image_upload_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,10 +16,13 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final Auth _auth = Auth();
+  final ImageUploadService _imageUploadService = ImageUploadService();
   User? _user;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   bool _isSaving = false;
+  bool _isUploadingImage = false;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -94,6 +101,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Selecionar foto'),
+            content: const Text('Escolha a origem da sua foto de perfil:'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.camera);
+                },
+                child: const Text('Câmera'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.gallery);
+                },
+                child: const Text('Galeria'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    if (_user == null) return;
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      // Selecionar imagem
+      final File? imageFile = await _imageUploadService.pickImage(
+        source: source,
+      );
+
+      if (imageFile != null) {
+        setState(() {
+          _selectedImage = imageFile;
+        });
+
+        // Upload para Cloudinary
+        final String imageUrl = await _imageUploadService.uploadImage(
+          imageFile,
+          _user!.uid,
+        );
+
+        await _auth.updateProfilePhoto(photoUrl: imageUrl);
+
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto de perfil atualizada com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao atualizar foto: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,9 +199,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              const CircleAvatar(
-                radius: 50,
-                backgroundImage: AssetImage('assets/avatar.png'),
+              Stack(
+                children: [
+                  GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage:
+                          _selectedImage != null
+                              ? FileImage(_selectedImage!)
+                              : _user?.photoURL != null
+                              ? NetworkImage(_user!.photoURL!)
+                              : const AssetImage('assets/avatar.png')
+                                  as ImageProvider,
+                      child:
+                          _isUploadingImage
+                              ? Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                              : null,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _showImageSourceDialog,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4A74DA),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Text(

@@ -1,3 +1,4 @@
+import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/column_chart.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/constants/colors.dart';
@@ -25,36 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Diainfo',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4A74DA),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Text('Olá, ', style: TextStyle(fontSize: 16)),
-                      Text(
-                        user?.displayName ?? '',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      SizedBox(width: 6),
-                      CircleAvatar(
-                        radius: 16,
-                        // backgroundImage: AssetImage('avatar.png'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              AppHeader(),
               const SizedBox(height: 30),
               const Align(
                 alignment: Alignment.centerLeft,
