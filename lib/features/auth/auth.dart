@@ -37,6 +37,31 @@ class Auth {
     }
   }
 
+  Future<void> changeUserName({required String userName}) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      await user.updateDisplayName(userName);
+    }
+  }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    User? user = _firebaseAuth.currentUser;
+    if (user != null) {
+      // Tentar reautenticar o usuário com a senha atual
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Se der certo, troca a senha
+      await user.updatePassword(newPassword);
+    }
+  }
+
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
   }

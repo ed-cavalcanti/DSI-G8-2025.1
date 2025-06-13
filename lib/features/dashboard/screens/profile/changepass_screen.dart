@@ -1,7 +1,9 @@
+import 'dart:developer';
+
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/features/auth/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Adicionar esta importação
 import 'package:flutter/material.dart';
-
 
 class ChangePassScreen extends StatefulWidget {
   const ChangePassScreen({super.key});
@@ -15,25 +17,68 @@ class _ChangePassScreenState extends State<ChangePassScreen> {
   final _currentPassController = TextEditingController();
   final _newPassController = TextEditingController();
   final _confirmPassController = TextEditingController();
+  final Auth _auth = Auth();
 
   bool _isLoading = false;
 
-  void _changePassword() {
+  Future<void> _changePassword() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      // Simulação do processo de alteração de senha
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Senha alterada com sucesso!')),
+      try {
+        await _auth.changePassword(
+          currentPassword: _currentPassController.text,
+          newPassword: _newPassController.text,
         );
-        Navigator.pop(context); // volta para a tela anterior
-      });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Senha alterada com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } on FirebaseAuthException catch (e) {
+        log('FirebaseAuthException code: ${e.code}, message: ${e.message}');
+        String errorMessage = 'Ocorreu um erro ao alterar a senha.';
+        if (e.code == 'wrong-password' ||
+            e.code == 'invalid-credential' ||
+            e.code == 'INVALID_LOGIN_CREDENTIALS') {
+          errorMessage =
+              'A senha atual está incorreta. Verifique e tente novamente.';
+        } else if (e.message != null && e.message!.isNotEmpty) {
+          errorMessage = 'Erro: ${e.message}';
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      } catch (e) {
+        log('Generic Exception: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Ocorreu um erro inesperado. Tente novamente mais tarde.',
+              ),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -121,11 +166,14 @@ class _ChangePassScreenState extends State<ChangePassScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation(Colors.white),
-                              )
-                            : const Text('Alterar senha'),
+                        child:
+                            _isLoading
+                                ? const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                )
+                                : const Text('Alterar senha'),
                       ),
                     ),
                     const SizedBox(height: 12),
