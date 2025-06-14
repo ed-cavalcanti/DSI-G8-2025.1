@@ -1,38 +1,191 @@
+import 'dart:io';
+
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/features/auth/auth.dart';
+import 'package:diainfo/services/image_upload_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final Auth _auth = Auth();
+  final ImageUploadService _imageUploadService = ImageUploadService();
+  User? _user;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  bool _isSaving = false;
+  bool _isUploadingImage = false;
+  File? _selectedImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = _auth.currentUser;
+    if (_user != null) {
+      _nameController.text = _user!.displayName ?? '';
+      _emailController.text = _user!.email ?? '';
+    }
+  }
 
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: const Text('Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context), // Fecha o modal
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirmar exclusão'),
+            content: const Text(
+              'Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.',
             ),
-            onPressed: () async {
-              Navigator.pop(context); // Fecha o modal
-              //await Auth().deleteAccount(); // Simula a função de deletar conta
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Conta deletada com sucesso')),
-              );
-              Navigator.pushReplacementNamed(context, '/'); // Redireciona
-            },
-            child: const Text('Confirmar'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Conta deletada com sucesso')),
+                  );
+                  Navigator.pushReplacementNamed(context, '/');
+                },
+                child: const Text('Confirmar'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
+  }
+
+  Future<void> _updateUserName() async {
+    if (_user != null && _nameController.text.isNotEmpty) {
+      setState(() {
+        _isSaving = true;
+      });
+      try {
+        await _auth.changeUserName(userName: _nameController.text);
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Nome atualizado com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao atualizar o nome: $e'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSaving = false;
+          });
+        }
+      }
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Selecionar foto'),
+            content: const Text('Escolha a origem da sua foto de perfil:'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.camera);
+                },
+                child: const Text('Câmera'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.gallery);
+                },
+                child: const Text('Galeria'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    if (_user == null) return;
+
+    setState(() {
+      _isUploadingImage = true;
+    });
+
+    try {
+      // Selecionar imagem
+      final File? imageFile = await _imageUploadService.pickImage(
+        source: source,
+      );
+
+      if (imageFile != null) {
+        setState(() {
+          _selectedImage = imageFile;
+        });
+
+        // Upload para Cloudinary
+        final String imageUrl = await _imageUploadService.uploadImage(
+          imageFile,
+          _user!.uid,
+        );
+
+        await _auth.updateProfilePhoto(photoUrl: imageUrl);
+
+        setState(() {
+          _user = _auth.currentUser;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Foto de perfil atualizada com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao atualizar foto: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploadingImage = false;
+        });
+      }
+    }
   }
 
   @override
@@ -46,26 +199,78 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
-              const CircleAvatar(
-                radius: 50,
-                backgroundImage: AssetImage('assets/avatar.png'),
+              Stack(
+                children: [
+                  GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage:
+                          _selectedImage != null
+                              ? FileImage(_selectedImage!)
+                              : _user?.photoURL != null
+                              ? NetworkImage(_user!.photoURL!)
+                              : const AssetImage('assets/avatar.png')
+                                  as ImageProvider,
+                      child:
+                          _isUploadingImage
+                              ? Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                              : null,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _showImageSourceDialog,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4A74DA),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Nome Completo',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              Text(
+                _user?.displayName ?? 'Nome Completo',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 30),
-              _buildTextField(label: 'Nome', initialValue: ''),
+              _buildTextField(label: 'Nome', controller: _nameController),
               const SizedBox(height: 16),
-              _buildTextField(label: 'Idade', initialValue: ''),
-              const SizedBox(height: 16),
-              _buildTextField(label: 'E-mail', initialValue: ''),
+              _buildTextField(
+                label: 'E-mail',
+                controller: _emailController,
+                enabled: false,
+              ),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isSaving ? null : _updateUserName,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4A74DA),
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -73,7 +278,17 @@ class ProfileScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text('Salvar alterações'),
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text('Salvar alterações'),
                 ),
               ),
               const SizedBox(height: 12),
@@ -113,6 +328,15 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   child: const Text('Logout'),
                 ),
+              ),
+              const SizedBox(height: 100),
+              Row(
+                children: [
+                  Text(
+                    "Zona de perigo",
+                    style: TextStyle(fontSize: 16, color: Colors.red),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               SizedBox(
@@ -155,10 +379,12 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildTextField({
     required String label,
-    required String initialValue,
+    required TextEditingController controller,
+    bool enabled = true,
   }) {
     return TextFormField(
-      initialValue: initialValue,
+      controller: controller,
+      enabled: enabled,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -168,5 +394,12 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
   }
 }

@@ -1,4 +1,6 @@
+import 'package:diainfo/commom_widgets/user_avatar.dart';
 import 'package:diainfo/features/auth/auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AppHeader extends StatelessWidget {
@@ -6,6 +8,7 @@ class AppHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final User? user = Auth().currentUser;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -26,17 +29,14 @@ class AppHeader extends StatelessWidget {
             children: [
               const Text('Olá, ', style: TextStyle(fontSize: 16)),
               Text(
-                Auth().currentUser?.displayName ?? '',
+                user?.displayName ?? '',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 18,
                 ),
               ),
-              const SizedBox(width: 6),
-              const CircleAvatar(
-                radius: 16,
-                // backgroundImage: AssetImage('avatar.png'),
-              ),
+              const SizedBox(width: 12),
+              const CurrentUserAvatar(),
             ],
           ),
         ),
