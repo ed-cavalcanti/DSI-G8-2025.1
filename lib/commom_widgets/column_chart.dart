@@ -2,45 +2,33 @@ import 'package:diainfo/constants/colors.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
-class GlucoseData {
-  final String day;
-  final double value;
-  GlucoseData(this.day, this.value);
-}
-
 class ColumnChart extends StatelessWidget {
-  ColumnChart({super.key});
+  final List<ChartData> chartData;
 
-  final List<GlucoseData> _chartData = [
-    GlucoseData('1', 110),
-    GlucoseData('2', 120),
-    GlucoseData('3', 105),
-    GlucoseData('4', 130),
-    GlucoseData('5', 115),
-    GlucoseData('6', 125),
-    GlucoseData('7', 100),
-  ];
+  const ColumnChart({super.key, required this.chartData});
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 220, // altura máxima do gráfico
+      height: 220,
       child: SfCartesianChart(
         primaryXAxis: CategoryAxis(
           title: AxisTitle(
-            text:
-                'Dia do mês', // Adiciona o nome "Dia" na parte inferior do gráfico
-            textStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            text: 'últimos registros',
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
         ),
-        series: <CartesianSeries<dynamic, dynamic>>[
-          ColumnSeries<GlucoseData, String>(
-            dataSource: _chartData,
-            xValueMapper: (GlucoseData data, _) => data.day,
-            yValueMapper: (GlucoseData data, _) => data.value,
+        series: <CartesianSeries>[
+          ColumnSeries<ChartData, String>(
+            dataSource: chartData,
+            xValueMapper: (ChartData data, _) => data.day,
+            yValueMapper: (ChartData data, _) => data.value,
             color: primaryColor,
             borderRadius: BorderRadius.circular(16),
-            pointColorMapper: (GlucoseData data, int index) {
+            pointColorMapper: (ChartData data, int index) {
               return index.isEven ? primaryColor : Colors.grey;
             },
           ),
@@ -48,4 +36,11 @@ class ColumnChart extends StatelessWidget {
       ),
     );
   }
+}
+
+class ChartData {
+  final String day;
+  final double value;
+
+  ChartData(this.day, this.value);
 }

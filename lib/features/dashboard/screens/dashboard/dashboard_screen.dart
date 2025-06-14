@@ -2,9 +2,10 @@ import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/column_chart.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/constants/colors.dart';
-import 'package:diainfo/features/auth/auth.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:diainfo/models/glicemia.dart';
+import 'package:diainfo/services/glicemia_service.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,7 +15,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final User? user = Auth().currentUser;
+  final GlicemiaService _glicemiaService = GlicemiaService();
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +44,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: TextStyle(fontSize: 18, color: textPrimaryColor),
                 ),
               ),
-
               const SizedBox(height: 8),
-              // Gráfico mockado
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -55,11 +55,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 child: Column(
                   children: [
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text(
-                          'Janeiro',
+                          'Como está sua glicemia?',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
@@ -68,18 +68,51 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    ColumnChart(),
+
+                    StreamBuilder<List<Glicemia>>(
+                      stream: _glicemiaService.getGlicemiaStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Erro ao carregar dados: ${snapshot.error}'),
+                          );
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Center(
+                            child: Text('Nenhuma glicemia cadastrada.'),
+                          );
+                        }
+
+                        List<Glicemia> glicemias = snapshot.data!;
+
+                        final chartData = glicemias.map((g) {
+                          final day = DateFormat('d').format(g.date.toDate());
+                          return ChartData(day, g.value.toDouble());
+                        }).toList();
+
+                        return ColumnChart(chartData: chartData);
+                      },
+                    ),
                   ],
                 ),
               ),
 
               const SizedBox(height: 20),
+
+              // ✅ Updated button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/glicemia');
+                  },
                   icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('cadastrar glicemia diária'),
+                  label: const Text('Cadastrar glicemia diária'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4A74DA),
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -104,18 +137,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        // ação para ver mais check-ups
-                      },
+                      onPressed: () {},
                       child: const Text(
-                        'ver mais >',
+                        'Ver mais >',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
                   ],
                 ),
               ),
-
               const SizedBox(height: 10),
               _buildCheckupItem('10/01/2025', 'Moderado', Colors.yellow),
               _buildCheckupItem('03/01/2025', 'Alto', Colors.red),
