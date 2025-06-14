@@ -3,7 +3,9 @@ import 'package:diainfo/commom_widgets/column_chart.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/constants/colors.dart';
 import 'package:diainfo/models/glicemia.dart';
+import 'package:diainfo/models/checkup.dart';
 import 'package:diainfo/services/glicemia_service.dart';
+import 'package:diainfo/services/checkup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -16,6 +18,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final GlicemiaService _glicemiaService = GlicemiaService();
+  final CheckupService _checkupService = CheckupService();
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +71,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-
                     StreamBuilder<List<Glicemia>>(
                       stream: _glicemiaService.getGlicemiaStream(),
                       builder: (context, snapshot) {
@@ -104,7 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 20),
 
-              // ✅ Updated button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -137,7 +138,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/checkup');
+                      },
                       child: const Text(
                         'Ver mais >',
                         style: TextStyle(color: Colors.grey),
@@ -147,9 +150,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              _buildCheckupItem('10/01/2025', 'Moderado', Colors.yellow),
-              _buildCheckupItem('03/01/2025', 'Alto', Colors.red),
-              _buildCheckupItem('01/10/2024', 'Baixo', Colors.green),
+              StreamBuilder<List<Checkup>>(
+                stream: _checkupService.getCheckupStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Erro: ${snapshot.error}'));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('Nenhum check-up encontrado.'));
+                  }
+
+                  List<Checkup> checkups = snapshot.data!;
+
+                  return Column(
+                    children: checkups.reversed
+                        .map(
+                          (checkup) => _buildCheckupItem(
+                        DateFormat('dd/MM/yyyy').format(checkup.date.toDate()),
+                        _riskToString(checkup.risk),
+                        _getRiskColor(checkup.risk),
+                      ),
+                    )
+                        .toList(),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -193,5 +223,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  String _riskToString(Risk risk) {
+    switch (risk) {
+      case Risk.low:
+        return 'Baixo';
+      case Risk.moderate:
+        return 'Moderado';
+      case Risk.high:
+        return 'Alto';
+    }
+  }
+
+  Color _getRiskColor(Risk risk) {
+    switch (risk) {
+      case Risk.low:
+        return Colors.green;
+      case Risk.moderate:
+        return Colors.orangeAccent;
+      case Risk.high:
+        return Colors.red;
+    }
   }
 }
