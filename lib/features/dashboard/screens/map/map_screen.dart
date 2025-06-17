@@ -1,12 +1,13 @@
 import 'dart:convert';
+
+import 'package:diainfo/commom_widgets/app_header.dart';
+import 'package:diainfo/commom_widgets/navbar.dart';
+import 'package:diainfo/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:diainfo/commom_widgets/app_header.dart';
-import 'package:diainfo/commom_widgets/navbar.dart';
-import 'package:diainfo/constants/sizes.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -102,13 +103,13 @@ class _MapScreenState extends State<MapScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const AppHeader(),
             Padding(
               padding: EdgeInsets.all(appDefaultSize),
               child: Column(
                 children: [
                   Row(
                     children: [
+                      AppHeader(),
                       Text(
                         'Unidades de saúde (${_searchRadius}km)',
                         style: TextStyle(
