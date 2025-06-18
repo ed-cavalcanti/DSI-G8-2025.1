@@ -1,7 +1,6 @@
 import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/commom_widgets/section_header.dart';
-import 'package:diainfo/constants/sizes.dart';
 import 'package:diainfo/features/dashboard/screens/checkup/update_checkup_screen.dart';
 import 'package:diainfo/models/checkup.dart';
 import 'package:diainfo/services/checkup_service.dart';
@@ -28,14 +27,10 @@ class _CheckupScreenState extends State<CheckupScreen> {
           children: [
             SafeArea(
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(
-                  horizontal: appDefaultSize,
-                  vertical: appDefaultSize,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: Column(
                   children: [
-                    AppHeader(),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 100),
                     SectionHeader(
                       title: "Histórico de check-ups",
                       navigateBack: "/dashboard",
@@ -108,6 +103,7 @@ class _CheckupScreenState extends State<CheckupScreen> {
                 ),
               ),
             ),
+            Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
             Positioned(
               bottom: 16.0,
               left: 30.0,

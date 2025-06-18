@@ -9,38 +9,42 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User? user = Auth().currentUser;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Text(
-          'Diainfo',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF4A74DA),
-          ),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.blueAccent.withAlpha(30),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(24),
+          bottomRight: Radius.circular(24),
         ),
-        InkWell(
-          onTap: () {
-            Navigator.pushNamed(context, '/profile');
-          },
-          borderRadius: BorderRadius.circular(30),
-          child: Row(
-            children: [
-              const Text('Olá, ', style: TextStyle(fontSize: 16)),
-              Text(
-                user?.displayName ?? '',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+      ),
+      padding: const EdgeInsets.only(left: 24, top: 54, right: 24, bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Image.asset("assets/diainfo-logo.png", height: 50),
+          InkWell(
+            onTap: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+            borderRadius: BorderRadius.circular(30),
+            child: Row(
+              children: [
+                const Text('Olá, ', style: TextStyle(fontSize: 16)),
+                Text(
+                  user?.displayName ?? '',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              const CurrentUserAvatar(),
-            ],
+                const SizedBox(width: 12),
+                const CurrentUserAvatar(),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -75,21 +75,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Column(
                     children: [
-                      // Título no topo
-                      const SizedBox(height: 40),
-                      const Center(
-                        child: Text(
-                          "Dianfo",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A74DA),
-                          ),
+                      const SizedBox(height: 80),
+                      Center(
+                        child: Column(
+                          children: [
+                            Image.asset('assets/diainfo-logo.png', height: 100),
+                            Text(
+                              "Dianfo",
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A74DA),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      // Espaço para centralizar o formulário
-                      const Spacer(),
-                      // Formulário no centro
+                      SizedBox(height: 100),
                       Form(
                         key: _formKey,
                         child: Column(

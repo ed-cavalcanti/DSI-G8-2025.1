@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
+import 'package:diainfo/commom_widgets/section_header.dart';
 import 'package:diainfo/constants/colors.dart';
 import 'package:diainfo/features/auth/auth.dart';
 import 'package:diainfo/models/glicemia.dart';
@@ -22,138 +23,92 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
+      body: SizedBox.expand(
+        child: Stack(
           children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    AppHeader(),
-                    const SizedBox(height: 30),
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 120),
+                  SectionHeader(
+                    title: "Histórico de glicemia",
+                    navigateBack: "/dashboard",
+                  ),
 
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Histórico de glicemia',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Acompanhe seus registros de glicemia passados',
-                        style: TextStyle(fontSize: 18, color: textPrimaryColor),
-                      ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Últimos Registros',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            child: const Text(
-                              'ver mais >',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    StreamBuilder<List<Glicemia>>(
-                      stream: _glicemiaService.getGlicemiaStream(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'Erro ao carregar glicemias: ${snapshot.error}',
-                            ),
-                          );
-                        }
-
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Center(
-                            child: Text('Nenhuma glicemia cadastrada.'),
-                          );
-                        }
-
-                        List<Glicemia> glicemias = snapshot.data!;
-
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          physics: const ClampingScrollPhysics(),
-                          itemCount: glicemias.length,
-                          itemBuilder: (context, index) {
-                            Glicemia glicemia = glicemias[index];
-                            Color color = Colors.green;
-                            if (glicemia.value >= 100) {
-                              color = Colors.red;
-                            } else if (glicemia.value >= 95 &&
-                                glicemia.value < 100) {
-                              color = Colors.orangeAccent;
-                            }
-                            return _buildGlicemiaItem(
-                              glicemia: glicemia,
-                              color: color,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    _showCadastroDialog(); // Para novo registro, glicemia será null
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Cadastrar glicemia diária'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4A74DA),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                  const SizedBox(height: 8),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Acompanhe seus registros de glicemia passados',
+                      style: TextStyle(fontSize: 16, color: textPrimaryColor),
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 30),
+                  Align(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Últimos Registros',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  StreamBuilder<List<Glicemia>>(
+                    stream: _glicemiaService.getGlicemiaStream(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      }
+
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            'Erro ao carregar glicemias: ${snapshot.error}',
+                          ),
+                        );
+                      }
+
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(
+                          child: Text('Nenhuma glicemia cadastrada.'),
+                        );
+                      }
+
+                      List<Glicemia> glicemias = snapshot.data!;
+
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: glicemias.length,
+                        itemBuilder: (context, index) {
+                          Glicemia glicemia = glicemias[index];
+                          Color color = Colors.green;
+                          if (glicemia.value >= 100) {
+                            color = Colors.red;
+                          } else if (glicemia.value >= 95 &&
+                              glicemia.value < 100) {
+                            color = Colors.orangeAccent;
+                          }
+                          return _buildGlicemiaItem(
+                            glicemia: glicemia,
+                            color: color,
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
+            Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
           ],
         ),
       ),
@@ -351,7 +306,7 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: const Color(0xFFF3F6FA),

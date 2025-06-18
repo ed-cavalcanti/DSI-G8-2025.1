@@ -43,6 +43,13 @@ class _SingupFormState extends State<SingupForm> {
           password: _passwordController.text,
           name: _nameController.text,
         );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Usuário cadastrado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed('/login');
       } on FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
           _showMessage('Este e-mail já está cadastrado');

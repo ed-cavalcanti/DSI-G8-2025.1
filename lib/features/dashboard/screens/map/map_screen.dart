@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
-import 'package:diainfo/constants/sizes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -31,10 +30,16 @@ class _MapScreenState extends State<MapScreen> {
     _getCurrentLocation();
   }
 
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
       return;
     }
 
@@ -42,7 +47,7 @@ class _MapScreenState extends State<MapScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        setState(() => _loading = false);
+        if (mounted) setState(() => _loading = false);
         return;
       }
     }
@@ -51,14 +56,18 @@ class _MapScreenState extends State<MapScreen> {
       desiredAccuracy: LocationAccuracy.high,
     );
 
-    setState(() => _currentPosition = LatLng(position.latitude, position.longitude));
+    if (!mounted) return;
+
+    setState(
+      () => _currentPosition = LatLng(position.latitude, position.longitude),
+    );
     _mapController.move(_currentPosition!, _initialZoom);
     await _fetchNearbyHealthUnits(position.latitude, position.longitude);
-    setState(() => _loading = false);
+    if (mounted) setState(() => _loading = false);
   }
 
   Future<void> _fetchNearbyHealthUnits(double lat, double lng) async {
-    final accessToken = 'SEU_TOKEN_AQUI';
+    final accessToken = 'MAPBOX_TOKEN';
     final radiusInDegrees = _searchRadius / 111.0;
 
     final List<String> categories = ['hospital', 'clinic'];
@@ -69,7 +78,7 @@ class _MapScreenState extends State<MapScreen> {
         Uri.parse(
           'https://api.mapbox.com/geocoding/v5/mapbox.places/$category.json?'
           'proximity=$lng,$lat&type=poi&limit=30'
-          '&bbox=${lng-radiusInDegrees},${lat-radiusInDegrees},${lng+radiusInDegrees},${lat+radiusInDegrees}'
+          '&bbox=${lng - radiusInDegrees},${lat - radiusInDegrees},${lng + radiusInDegrees},${lat + radiusInDegrees}'
           '&access_token=$accessToken',
         ),
       );
@@ -80,19 +89,31 @@ class _MapScreenState extends State<MapScreen> {
           (data['features'] as List).map((feature) {
             final coords = feature['geometry']['coordinates'];
             return {
-              'name': feature['text'] ?? (category == 'hospital' ? 'Hospital' : 'Posto de Saúde'),
-              'address': feature['place_name']?.replaceFirst('${feature['text']}, ', '') ?? 'Endereço não disponível',
+              'name':
+                  feature['text'] ??
+                  (category == 'hospital' ? 'Hospital' : 'Posto de Saúde'),
+              'address':
+                  feature['place_name']?.replaceFirst(
+                    '${feature['text']}, ',
+                    '',
+                  ) ??
+                  'Endereço não disponível',
               'location': LatLng(coords[1], coords[0]),
-              'distance': Geolocator.distanceBetween(lat, lng, coords[1], coords[0]) / 1000,
+              'distance':
+                  Geolocator.distanceBetween(lat, lng, coords[1], coords[0]) /
+                  1000,
               'type': category,
             };
-          }).toList()
+          }).toList(),
         );
       }
     }
 
+    if (!mounted) return;
+
     setState(() {
-      _healthUnits = allResults..sort((a, b) => a['distance'].compareTo(b['distance']));
+      _healthUnits =
+          allResults..sort((a, b) => a['distance'].compareTo(b['distance']));
     });
   }
 
@@ -100,16 +121,16 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      body: SafeArea(
-        child: Column(
+      body: SizedBox.expand(
+        child: Stack(
           children: [
             Padding(
-              padding: EdgeInsets.all(appDefaultSize),
+              padding: EdgeInsets.all(24),
               child: Column(
                 children: [
+                  const SizedBox(height: 100),
                   Row(
                     children: [
-                      AppHeader(),
                       Text(
                         'Unidades de saúde (${_searchRadius}km)',
                         style: TextStyle(
@@ -125,7 +146,6 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
                   SizedBox(
                     height: MediaQuery.of(context).size.height * 0.4,
                     child: Card(
@@ -153,12 +173,12 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                     ),
                   ),
+                  SizedBox(height: 24),
+                  Expanded(child: _buildHealthUnitList()),
                 ],
               ),
             ),
-            Expanded(
-              child: _buildHealthUnitList(),
-            ),
+            Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
           ],
         ),
       ),
@@ -188,10 +208,9 @@ class _MapScreenState extends State<MapScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
-          additionalOptions: {
-            'accessToken': 'SEU_TOKEN_AQUI',
-          },
+          urlTemplate:
+              'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
+          additionalOptions: {'accessToken': 'MAPBOX_TOKEN'},
         ),
         MarkerLayer(
           markers: [
@@ -200,24 +219,31 @@ class _MapScreenState extends State<MapScreen> {
                 point: _currentPosition!,
                 width: 40,
                 height: 40,
-                builder: (ctx) => const Icon(
-                  Icons.person_pin_circle,
-                  color: Colors.blue,
-                  size: 40,
-                ),
+                builder:
+                    (ctx) => const Icon(
+                      Icons.person_pin_circle,
+                      color: Colors.blue,
+                      size: 40,
+                    ),
               ),
-            ..._healthUnits.map((unit) => Marker(
-                  point: unit['location'],
-                  width: 30,
-                  height: 30,
-                  builder: (ctx) => Icon(
-                    unit['type'] == 'hospital' 
-                      ? Icons.local_hospital 
-                      : Icons.medical_services,
-                    color: unit['type'] == 'hospital' ? Colors.red : Colors.green,
-                    size: 30,
-                  ),
-                )),
+            ..._healthUnits.map(
+              (unit) => Marker(
+                point: unit['location'],
+                width: 30,
+                height: 30,
+                builder:
+                    (ctx) => Icon(
+                      unit['type'] == 'hospital'
+                          ? Icons.local_hospital
+                          : Icons.medical_services,
+                      color:
+                          unit['type'] == 'hospital'
+                              ? Colors.red
+                              : Colors.green,
+                      size: 30,
+                    ),
+              ),
+            ),
           ],
         ),
         CircleLayer(
@@ -258,21 +284,21 @@ class _MapScreenState extends State<MapScreen> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: appDefaultSize),
+      padding: EdgeInsets.symmetric(
+        horizontal: 0,
+      ), // Ajusta para ocupar largura máxima
       itemCount: _healthUnits.length,
       itemBuilder: (context, index) {
         final unit = _healthUnits[index];
         return Card(
           margin: EdgeInsets.only(
             bottom: index == _healthUnits.length - 1 ? 16 : 8,
-            left: 4,
-            right: 4,
           ),
           child: ListTile(
             leading: Icon(
-              unit['type'] == 'hospital' 
-                ? Icons.local_hospital 
-                : Icons.medical_services,
+              unit['type'] == 'hospital'
+                  ? Icons.local_hospital
+                  : Icons.medical_services,
               color: unit['type'] == 'hospital' ? Colors.red : Colors.green,
             ),
             title: Text(unit['name']),
