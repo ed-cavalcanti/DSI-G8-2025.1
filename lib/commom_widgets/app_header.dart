@@ -12,7 +12,7 @@ class AppHeader extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.blueAccent.withAlpha(30),
+        color: const Color.fromARGB(255, 225, 236, 255),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(24),
           bottomRight: Radius.circular(24),

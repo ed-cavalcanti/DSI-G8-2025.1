@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/commom_widgets/section_header.dart';
-import 'package:diainfo/constants/colors.dart';
 import 'package:diainfo/features/auth/auth.dart';
 import 'package:diainfo/models/glicemia.dart';
 import 'package:diainfo/services/glicemia_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class GlicemiaScreen extends StatefulWidget {
   const GlicemiaScreen({super.key});
@@ -26,32 +26,21 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
       body: SizedBox.expand(
         child: Stack(
           children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 120),
-                  SectionHeader(
-                    title: "Histórico de glicemia",
-                    navigateBack: "/dashboard",
-                  ),
-
-                  const SizedBox(height: 8),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Acompanhe seus registros de glicemia passados',
-                      style: TextStyle(fontSize: 16, color: textPrimaryColor),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 100),
+                    SectionHeader(
+                      title: "Histórico de glicemia",
+                      navigateBack: "/dashboard",
                     ),
-                  ),
-
-                  const SizedBox(height: 30),
-                  Align(
-                    child: Row(
+                    const SizedBox(height: 30),
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Últimos Registros',
                           style: TextStyle(
                             fontSize: 18,
@@ -60,55 +49,74 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                         ),
                       ],
                     ),
-                  ),
-                  StreamBuilder<List<Glicemia>>(
-                    stream: _glicemiaService.getGlicemiaStream(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      }
+                    const SizedBox(height: 20),
+                    StreamBuilder<List<Glicemia>>(
+                      stream: _glicemiaService.getGlicemiaStream(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
 
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            'Erro ao carregar glicemias: ${snapshot.error}',
-                          ),
-                        );
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(
-                          child: Text('Nenhuma glicemia cadastrada.'),
-                        );
-                      }
-
-                      List<Glicemia> glicemias = snapshot.data!;
-
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const ClampingScrollPhysics(),
-                        itemCount: glicemias.length,
-                        itemBuilder: (context, index) {
-                          Glicemia glicemia = glicemias[index];
-                          Color color = Colors.green;
-                          if (glicemia.value >= 100) {
-                            color = Colors.red;
-                          } else if (glicemia.value >= 95 &&
-                              glicemia.value < 100) {
-                            color = Colors.orangeAccent;
-                          }
-                          return _buildGlicemiaItem(
-                            glicemia: glicemia,
-                            color: color,
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text('Erro ao carregar glicemias: ${snapshot.error}'),
                           );
-                        },
-                      );
-                    },
-                  ),
-                ],
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          return const Row(
+                            children: [Text('Nenhuma glicemia cadastrada.')],
+                          );
+                        }
+
+                        List<Glicemia> glicemias = snapshot.data!;
+                        // Inverter ordem para mostrar mais recentes primeiro
+                        glicemias.sort((a, b) => b.date.compareTo(a.date));
+
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: glicemias.length,
+                          itemBuilder: (context, index) {
+                            Glicemia glicemia = glicemias[index];
+                            Color color = Colors.green;
+                            if (glicemia.value >= 100) {
+                              color = Colors.red;
+                            } else if (glicemia.value >= 95) {
+                              color = Colors.orangeAccent;
+                            }
+
+                            return _buildGlicemiaItem(
+                              glicemia: glicemia,
+                              color: color,
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
             Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
+            Positioned(
+              bottom: 16,
+              left: 30,
+              right: 30,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  _showCadastroDialog();
+                },
+                icon: PhosphorIcon(
+                  PhosphorIcons.plusCircle(PhosphorIconsStyle.bold),
+                ),
+                label: const Text('Cadastrar glicemia diária'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  minimumSize: const Size(double.infinity, 48),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -129,15 +137,109 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
     );
   }
 
+  Widget _buildGlicemiaItem({
+    required Glicemia glicemia,
+    required Color color,
+  }) {
+    final String formattedDate = DateFormat('dd/MM - HH:mm').format(glicemia.date.toDate());
+
+    return InkWell(
+      onTap: () {
+        _showCadastroDialog(glicemia: glicemia);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: const Color(0xFFF3F6FA),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(formattedDate, style: const TextStyle(fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text('Glicemia: ${glicemia.value} mg/dL',
+                          style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 6),
+                      CircleAvatar(radius: 6, backgroundColor: color),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                _showDeleteDialog(glicemia);
+              },
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: 'Deletar',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(Glicemia glicemia) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirmar Exclusão'),
+          content: const Text('Tem certeza que deseja deletar este registro de glicemia?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Deletar'),
+              onPressed: () {
+                if (glicemia.id != null) {
+                  _glicemiaService
+                      .delete(glicemia.id!)
+                      .then((_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Glicemia deletada!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    Navigator.of(context).pop();
+                  })
+                      .catchError((error) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao deletar glicemia: $error'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  });
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showCadastroDialog({Glicemia? glicemia}) {
     final isEdit = glicemia != null;
-
     final TextEditingController valorController = TextEditingController(
       text: isEdit ? glicemia.value.toString() : '',
     );
     DateTime? dataSelecionada = isEdit ? glicemia.date.toDate() : null;
     TimeOfDay? horaSelecionada =
-        isEdit ? TimeOfDay.fromDateTime(glicemia.date.toDate()) : null;
+    isEdit ? TimeOfDay.fromDateTime(glicemia.date.toDate()) : null;
 
     showDialog(
       context: context,
@@ -213,7 +315,6 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                       final valor = int.tryParse(valorController.text);
 
                       if (valor != null) {
-                        // Lógica para salvar no Firebase
                         final userId = Auth().currentUser?.uid;
                         if (userId == null) {
                           Navigator.pushReplacementNamed(context, '/tree');
@@ -235,49 +336,29 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                           date: Timestamp.fromDate(dataHoraCombinada),
                         );
 
-                        if (isEdit) {
-                          _glicemiaService
-                              .update(glicemiaData)
-                              .then((_) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Glicemia atualizada!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              })
-                              .catchError((error) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Erro ao atualizar glicemia: $error',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              });
-                        } else {
-                          _glicemiaService
-                              .create(glicemiaData)
-                              .then((_) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Glicemia registrada!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              })
-                              .catchError((error) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Erro ao registrar glicemia: $error',
-                                    ),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              });
-                        }
+                        final Future<void> action = isEdit
+                            ? _glicemiaService.update(glicemiaData)
+                            : _glicemiaService.create(glicemiaData);
+
+                        action.then((_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isEdit
+                                  ? 'Glicemia atualizada!'
+                                  : 'Glicemia registrada!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }).catchError((error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  'Erro ao ${isEdit ? "atualizar" : "registrar"} glicemia: $error'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        });
+
                         Navigator.pop(context);
                       }
                     }
@@ -289,114 +370,6 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
           },
         );
       },
-    );
-  }
-
-  Widget _buildGlicemiaItem({
-    required Glicemia glicemia,
-    required Color color,
-  }) {
-    final String formattedDate = DateFormat(
-      'dd/MM - HH:mm',
-    ).format(glicemia.date.toDate());
-
-    return InkWell(
-      onTap: () {
-        _showCadastroDialog(glicemia: glicemia);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: const Color(0xFFF3F6FA),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(formattedDate, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        'Glicemia: ${glicemia.value}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      const SizedBox(width: 6),
-                      CircleAvatar(radius: 6, backgroundColor: color),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    // Adiciona o diálogo de confirmação
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: const Text('Confirmar Exclusão'),
-                          content: const Text(
-                            'Tem certeza que deseja deletar este item?',
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              child: const Text('Cancelar'),
-                              onPressed: () {
-                                Navigator.of(context).pop(); // Fecha o diálogo
-                              },
-                            ),
-                            TextButton(
-                              child: const Text('Deletar'),
-                              onPressed: () {
-                                if (glicemia.id != null) {
-                                  _glicemiaService
-                                      .delete(glicemia.id!)
-                                      .then((_) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Glicemia deletada!'),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                        Navigator.of(context).pop();
-                                      })
-                                      .catchError((error) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              'Erro ao deletar glicemia: $error',
-                                            ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      });
-                                }
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  tooltip: 'Deletar',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
