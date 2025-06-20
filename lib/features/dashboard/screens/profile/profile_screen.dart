@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/features/auth/auth.dart';
 import 'package:diainfo/services/image_upload_service.dart';
@@ -35,33 +34,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showDeleteConfirmation(BuildContext context) {
+    final TextEditingController passwordController = TextEditingController();
+
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Confirmar exclusão'),
-            content: const Text(
-              'Tem certeza que deseja deletar sua conta? Esta ação não pode ser desfeita.',
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar exclusão'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Digite sua senha para confirmar a exclusão da conta. Esta ação não pode ser desfeita.',
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Senha',
+                border: OutlineInputBorder(),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Conta deletada com sucesso')),
-                  );
-                  Navigator.pushReplacementNamed(context, '/');
-                },
-                child: const Text('Confirmar'),
-              ),
-            ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
           ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteAccount(passwordController.text.trim());
+            },
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _deleteAccount(String password) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final email = user?.email;
+
+      if (email == null) {
+        throw FirebaseAuthException(
+          code: 'no-email',
+          message: 'Usuário sem e-mail associado.',
+        );
+      }
+
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
+
+      await user!.reauthenticateWithCredential(credential);
+      await user.delete();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Conta deletada com sucesso.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Erro: ${e.message}';
+      if (e.code == 'wrong-password') {
+        errorMessage = 'Senha incorreta.';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro desconhecido: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
   }
 
   Future<void> _updateUserName() async {
@@ -76,7 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Nome atualizado com sucesso!'),
               backgroundColor: Colors.green,
             ),
@@ -104,31 +165,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showImageSourceDialog() {
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Selecionar foto'),
-            content: const Text('Escolha a origem da sua foto de perfil:'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _pickAndUploadImage(ImageSource.camera);
-                },
-                child: const Text('Câmera'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _pickAndUploadImage(ImageSource.gallery);
-                },
-                child: const Text('Galeria'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancelar'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: const Text('Selecionar foto'),
+        content: const Text('Escolha a origem da sua foto de perfil:'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickAndUploadImage(ImageSource.camera);
+            },
+            child: const Text('Câmera'),
           ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _pickAndUploadImage(ImageSource.gallery);
+            },
+            child: const Text('Galeria'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -140,17 +200,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Selecionar imagem
-      final File? imageFile = await _imageUploadService.pickImage(
-        source: source,
-      );
-
+      final File? imageFile = await _imageUploadService.pickImage(source: source);
       if (imageFile != null) {
         setState(() {
           _selectedImage = imageFile;
         });
 
-        // Upload para Cloudinary
         final String imageUrl = await _imageUploadService.uploadImage(
           imageFile,
           _user!.uid,
@@ -205,28 +260,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: _showImageSourceDialog,
                     child: CircleAvatar(
                       radius: 50,
-                      backgroundImage:
-                          _selectedImage != null
-                              ? FileImage(_selectedImage!)
-                              : _user?.photoURL != null
-                              ? NetworkImage(_user!.photoURL!)
-                              : const AssetImage('assets/avatar.png')
-                                  as ImageProvider,
-                      child:
-                          _isUploadingImage
-                              ? Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.5),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              )
-                              : null,
+                      backgroundImage: _selectedImage != null
+                          ? FileImage(_selectedImage!)
+                          : _user?.photoURL != null
+                          ? NetworkImage(_user!.photoURL!)
+                          : const AssetImage('assets/avatar.png') as ImageProvider,
+                      child: _isUploadingImage
+                          ? Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withAlpha(100),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                      )
+                          : null,
                     ),
                   ),
                   Positioned(
@@ -278,17 +330,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child:
-                      _isSaving
-                          ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          )
-                          : const Text('Salvar alterações'),
+                  child: _isSaving
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : const Text('Salvar alterações'),
                 ),
               ),
               const SizedBox(height: 12),
