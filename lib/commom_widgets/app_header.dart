@@ -9,6 +9,11 @@ class AppHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final User? user = Auth().currentUser;
+
+    final String firstName = user?.displayName?.split(' ').first ?? '';
+    final String displayName =
+        (firstName.length <= 20 && firstName.isNotEmpty) ? firstName : 'Usuário';
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -32,7 +37,7 @@ class AppHeader extends StatelessWidget {
               children: [
                 const Text('Olá, ', style: TextStyle(fontSize: 16)),
                 Text(
-                  user?.displayName ?? '',
+                  displayName,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
