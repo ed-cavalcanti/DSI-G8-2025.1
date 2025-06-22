@@ -1,48 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/constants/sizes.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
-class Remedy {
-  final String id;
-  String name;
-  String type;
-  String dosage;
-  String frequency;
-  DateTime createdAt;
-
-  Remedy({
-    required this.id,
-    required this.name,
-    required this.type,
-    required this.dosage,
-    required this.frequency,
-    required this.createdAt,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'type': type,
-      'dosage': dosage,
-      'frequency': frequency,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-    };
-  }
-
-  factory Remedy.fromMap(String id, Map<String, dynamic> map) {
-    return Remedy(
-      id: id,
-      name: map['name'] ?? '',
-      type: map['type'] ?? '',
-      dosage: map['dosage'] ?? '',
-      frequency: map['frequency'] ?? '',
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-    );
-  }
-}
+import 'package:diainfo/models/remedy.dart';
+import 'package:diainfo/services/remedy_service.dart';
 
 class RemedyScreen extends StatefulWidget {
   const RemedyScreen({super.key});
@@ -52,7 +15,6 @@ class RemedyScreen extends StatefulWidget {
 }
 
 class _RemedyScreenState extends State<RemedyScreen> {
-  final List<Remedy> _remedies = [];
   final List<Remedy> _filteredRemedies = [];
   final TextEditingController _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -63,64 +25,39 @@ class _RemedyScreenState extends State<RemedyScreen> {
   
   String _selectedFilter = 'Todos';
   bool _isEditing = false;
-  String? _editingId;
+  String _editingId = '';
   bool _isLoading = true;
-
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  late StreamSubscription<List<Remedy>> _remediesSubscription;
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_filterRemedies);
-    _loadRemedies();
+    _setupRemediesStream();
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    _nameController.dispose();
-    _typeController.dispose();
-    _dosageController.dispose();
-    _frequencyController.dispose();
-    super.dispose();
+  void _setupRemediesStream() {
+    _remediesSubscription = RemedyService().remediesStream.listen(
+      (remedies) {
+        setState(() {
+          _filterRemedies(remedies);
+          _isLoading = false;
+        });
+      },
+      onError: (error) {
+        setState(() => _isLoading = false);
+        _showErrorSnackbar('Erro ao carregar remédios: $error');
+      }
+    );
   }
 
-  Future<void> _loadRemedies() async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) return;
-
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('remedies')
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      setState(() {
-        _remedies.clear();
-        _remedies.addAll(snapshot.docs.map((doc) => 
-          Remedy.fromMap(doc.id, doc.data())
-        ));
-        _filteredRemedies.addAll(_remedies);
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar remédios: $e')),
-      );
-    }
-  }
-
-  void _filterRemedies() {
+  void _filterRemedies([List<Remedy>? remedies]) {
+    final allRemedies = remedies ?? _filteredRemedies;
     final query = _searchController.text.toLowerCase();
+    
     setState(() {
       _filteredRemedies.clear();
-      _filteredRemedies.addAll(_remedies.where((remedy) {
+      _filteredRemedies.addAll(allRemedies.where((remedy) {
         final matchesSearch = remedy.name.toLowerCase().contains(query) ||
             remedy.type.toLowerCase().contains(query);
         final matchesFilter = _selectedFilter == 'Todos' || 
@@ -143,7 +80,7 @@ class _RemedyScreenState extends State<RemedyScreen> {
       _typeController.clear();
       _dosageController.clear();
       _frequencyController.clear();
-      _editingId = null;
+      _editingId = '';
       _isEditing = false;
     }
 
@@ -159,91 +96,93 @@ class _RemedyScreenState extends State<RemedyScreen> {
             padding: const EdgeInsets.all(20),
             child: Form(
               key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _isEditing ? 'Editar Remédio' : 'Adicionar Remédio',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _isEditing ? 'Editar Remédio' : 'Adicionar Remédio',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome do Remédio',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome do Remédio',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira o nome';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira o nome';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    controller: _typeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Tipo (Analgésico, Antibiótico, etc.)',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: _typeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipo (Analgésico, Antibiótico, etc.)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira o tipo';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira o tipo';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    controller: _dosageController,
-                    decoration: const InputDecoration(
-                      labelText: 'Dosagem (ex: 500mg)',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: _dosageController,
+                      decoration: const InputDecoration(
+                        labelText: 'Dosagem (ex: 500mg)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira a dosagem';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira a dosagem';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  TextFormField(
-                    controller: _frequencyController,
-                    decoration: const InputDecoration(
-                      labelText: 'Frequência (ex: 8/8 horas)',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: _frequencyController,
+                      decoration: const InputDecoration(
+                        labelText: 'Frequência (ex: 8/8 horas)',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira a frequência';
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, insira a frequência';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[300],
-                          foregroundColor: Colors.black,
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[300],
+                            foregroundColor: Colors.black,
+                          ),
+                          child: const Text('Cancelar'),
                         ),
-                        child: const Text('Cancelar'),
-                      ),
-                      ElevatedButton(
-                        onPressed: _saveRemedy,
-                        child: Text(_isEditing ? 'Salvar' : 'Adicionar'),
-                      ),
-                    ],
-                  ),
-                ],
+                        ElevatedButton(
+                          onPressed: _saveRemedy,
+                          child: Text(_isEditing ? 'Salvar' : 'Adicionar'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -255,11 +194,8 @@ class _RemedyScreenState extends State<RemedyScreen> {
   Future<void> _saveRemedy() async {
     if (_formKey.currentState!.validate()) {
       try {
-        final user = _auth.currentUser;
-        if (user == null) return;
-
         final newRemedy = Remedy(
-          id: _editingId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+          id: _editingId,
           name: _nameController.text,
           type: _typeController.text,
           dosage: _dosageController.text,
@@ -268,26 +204,14 @@ class _RemedyScreenState extends State<RemedyScreen> {
         );
 
         if (_isEditing) {
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('remedies')
-              .doc(_editingId)
-              .update(newRemedy.toMap());
+          await RemedyService().updateRemedy(newRemedy);
         } else {
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .collection('remedies')
-              .add(newRemedy.toMap());
+          await RemedyService().addRemedy(newRemedy);
         }
 
-        await _loadRemedies();
         Navigator.pop(context);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar remédio: $e')),
-        );
+        _showErrorSnackbar('Erro ao salvar remédio: $e');
       }
     }
   }
@@ -320,22 +244,30 @@ class _RemedyScreenState extends State<RemedyScreen> {
 
   Future<void> _deleteRemedy(String id) async {
     try {
-      final user = _auth.currentUser;
-      if (user == null) return;
-
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('remedies')
-          .doc(id)
-          .delete();
-
-      await _loadRemedies();
+      await RemedyService().deleteRemedy(id);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao excluir remédio: $e')),
-      );
+      _showErrorSnackbar('Erro ao excluir remédio: $e');
     }
+  }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _remediesSubscription.cancel();
+    _searchController.dispose();
+    _nameController.dispose();
+    _typeController.dispose();
+    _dosageController.dispose();
+    _frequencyController.dispose();
+    super.dispose();
   }
 
   @override
@@ -344,7 +276,7 @@ class _RemedyScreenState extends State<RemedyScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
+          const Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -406,7 +338,7 @@ class _RemedyScreenState extends State<RemedyScreen> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: ['Todos', 'Analgesico', 'Antibiotico', 'Anti-hipertensivo']
+            children: ['Todos', 'Analgésico', 'Antibiótico', 'Anti-hipertensivo']
                 .map((type) {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
@@ -448,7 +380,6 @@ class _RemedyScreenState extends State<RemedyScreen> {
     }
 
     return ListView.builder(
-      shrinkWrap: true,
       itemCount: _filteredRemedies.length,
       itemBuilder: (context, index) {
         final remedy = _filteredRemedies[index];
