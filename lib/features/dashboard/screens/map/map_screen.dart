@@ -67,7 +67,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _fetchNearbyHealthUnits(double lat, double lng) async {
-    final accessToken = 'pk.eyJ1IjoiemV0cmFpbmVyIiwiYSI6ImNtYnh4a3Z5ZjE1dzgya29zczk3d2Z2bDQifQ.31ywzTDOf5yjIm_27qgsbQ';
+    final accessToken = 'SEU_TOKEN';
     final radiusInDegrees = _searchRadius / 111.0;
 
     final List<String> categories = ['hospital', 'clinic'];
@@ -210,7 +210,7 @@ class _MapScreenState extends State<MapScreen> {
         TileLayer(
           urlTemplate:
               'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token={accessToken}',
-          additionalOptions: {'accessToken': 'pk.eyJ1IjoiemV0cmFpbmVyIiwiYSI6ImNtYnh4a3Z5ZjE1dzgya29zczk3d2Z2bDQifQ.31ywzTDOf5yjIm_27qgsbQ'},
+          additionalOptions: {'accessToken': 'SEU_TOKEN'},
         ),
         MarkerLayer(
           markers: [
