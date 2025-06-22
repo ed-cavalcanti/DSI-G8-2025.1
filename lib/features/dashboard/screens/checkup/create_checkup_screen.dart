@@ -79,10 +79,12 @@ class _CreateCheckupScreenState extends State<CreateCheckupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SizedBox.expand(
-        child: Stack(
+      bottomNavigationBar: Navbar(currentIndex: 3),
+      body: SafeArea(
+        child: Column(
           children: [
-            SafeArea(
+            const AppHeader(),
+            Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: appDefaultSize,
@@ -90,8 +92,6 @@ class _CreateCheckupScreenState extends State<CreateCheckupScreen> {
                 ),
                 child: Column(
                   children: [
-                    AppHeader(),
-                    const SizedBox(height: 30),
                     SectionHeader(
                       title: "Novo check-up",
                       navigateBack: "/checkup",
@@ -105,43 +105,36 @@ class _CreateCheckupScreenState extends State<CreateCheckupScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _saveCheckup,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4A74DA),
+                          backgroundColor: Colors.cyan,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text(
-                                  'Salvar Check-up',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                        child: _isLoading
+                            ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                            strokeWidth: 2,
+                          ),
+                        )
+                            : const Text(
+                          'Salvar Check-up',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Navbar(currentIndex: 3),
             ),
           ],
         ),

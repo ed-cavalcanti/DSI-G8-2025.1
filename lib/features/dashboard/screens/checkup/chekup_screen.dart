@@ -18,9 +18,8 @@ class CheckupScreen extends StatefulWidget {
 class _CheckupScreenState extends State<CheckupScreen> {
   final CheckupService _checkupService = CheckupService();
   final TextEditingController _searchController = TextEditingController();
-  String _selectedFilter = 'Todos'; // 'Todos', 'Baixo', 'Moderado', 'Alto'
+  String _selectedFilter = 'Todos';
   List<Checkup> _allCheckups = [];
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -78,11 +77,8 @@ class _CheckupScreenState extends State<CheckupScreen> {
                       navigateBack: "/dashboard",
                     ),
                     const SizedBox(height: 30),
-                    
-                    // Filtros
                     _buildFilterSection(),
                     const SizedBox(height: 20),
-                    
                     StreamBuilder<List<Checkup>>(
                       stream: _checkupService.getCheckupStream(),
                       builder: (context, snapshot) {
@@ -92,9 +88,7 @@ class _CheckupScreenState extends State<CheckupScreen> {
 
                         if (snapshot.hasError) {
                           return Center(
-                            child: Text(
-                              'Erro ao carregar checkups: ${snapshot.error}',
-                            ),
+                            child: Text('Erro ao carregar checkups: ${snapshot.error}'),
                           );
                         }
 
@@ -143,6 +137,7 @@ class _CheckupScreenState extends State<CheckupScreen> {
                 ),
                 label: const Text("Cadastrar novo check-up"),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyan,
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                   minimumSize: const Size(double.infinity, 48),
                 ),
@@ -171,7 +166,6 @@ class _CheckupScreenState extends State<CheckupScreen> {
   Widget _buildFilterSection() {
     return Column(
       children: [
-        // Campo de busca
         TextField(
           controller: _searchController,
           decoration: InputDecoration(
@@ -185,8 +179,6 @@ class _CheckupScreenState extends State<CheckupScreen> {
           ),
         ),
         const SizedBox(height: 10),
-        
-        // Filtros por risco
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -212,17 +204,12 @@ class _CheckupScreenState extends State<CheckupScreen> {
 
   List<Checkup> _applyFilters(List<Checkup> checkups) {
     final query = _searchController.text.toLowerCase();
-    
     return checkups.where((checkup) {
-      // Filtro por texto (data formatada)
       final formattedDate = DateFormat('dd/MM/yyyy - HH:mm').format(checkup.date.toDate());
       final matchesSearch = formattedDate.toLowerCase().contains(query) ||
           _getRiskText(checkup.risk).toLowerCase().contains(query);
-      
-      // Filtro por nível de risco
-      final matchesFilter = _selectedFilter == 'Todos' || 
+      final matchesFilter = _selectedFilter == 'Todos' ||
           _getRiskText(checkup.risk) == _selectedFilter;
-      
       return matchesSearch && matchesFilter;
     }).toList();
   }
@@ -259,10 +246,7 @@ class _CheckupScreenState extends State<CheckupScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text(
-                        'Risco: $riskText',
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                      Text('Risco: $riskText', style: const TextStyle(fontSize: 14)),
                       const SizedBox(width: 6),
                       CircleAvatar(radius: 6, backgroundColor: color),
                     ],
@@ -270,16 +254,12 @@ class _CheckupScreenState extends State<CheckupScreen> {
                 ],
               ),
             ),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    _showDeleteDialog(checkup);
-                  },
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  tooltip: 'Deletar',
-                ),
-              ],
+            IconButton(
+              onPressed: () {
+                _showDeleteDialog(checkup);
+              },
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: 'Deletar',
             ),
           ],
         ),
@@ -305,25 +285,22 @@ class _CheckupScreenState extends State<CheckupScreen> {
               child: const Text('Deletar'),
               onPressed: () {
                 if (checkup.id != null) {
-                  _checkupService
-                      .delete(checkup.id!)
-                      .then((_) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Checkup deletado!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                        Navigator.of(context).pop();
-                      })
-                      .catchError((error) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Erro ao deletar checkup: $error'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      });
+                  _checkupService.delete(checkup.id!).then((_) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Checkup deletado!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                    Navigator.of(context).pop();
+                  }).catchError((error) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao deletar checkup: $error'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  });
                 }
               },
             ),

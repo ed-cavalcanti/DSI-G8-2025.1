@@ -44,6 +44,7 @@ class _UpdateCheckupScreenState extends State<UpdateCheckupScreen> {
           );
           return;
         }
+
         final updatedCheckup = widget.checkup.copyWith(
           name: formData['name'],
           age: formData['age'],
@@ -60,7 +61,6 @@ class _UpdateCheckupScreenState extends State<UpdateCheckupScreen> {
 
         _showMessage('Checkup atualizado com sucesso!', isError: false);
 
-        // Aguarda um pouco para mostrar a mensagem e volta para a tela anterior
         await Future.delayed(const Duration(seconds: 1));
         Navigator.pop(context);
       } catch (e) {
@@ -87,10 +87,12 @@ class _UpdateCheckupScreenState extends State<UpdateCheckupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SizedBox.expand(
-        child: Stack(
+      bottomNavigationBar: Navbar(currentIndex: 3),
+      body: SafeArea(
+        child: Column(
           children: [
-            SafeArea(
+            const AppHeader(),
+            Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
                   horizontal: appDefaultSize,
@@ -98,8 +100,6 @@ class _UpdateCheckupScreenState extends State<UpdateCheckupScreen> {
                 ),
                 child: Column(
                   children: [
-                    AppHeader(),
-                    const SizedBox(height: 30),
                     SectionHeader(
                       title: "Editar check-up",
                       navigateBack: "/checkup",
@@ -113,43 +113,36 @@ class _UpdateCheckupScreenState extends State<UpdateCheckupScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _updateCheckup,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4A74DA),
+                          backgroundColor: Colors.cyan,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : const Text(
-                                  'Salvar Alterações',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                        child: _isLoading
+                            ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
+                            strokeWidth: 2,
+                          ),
+                        )
+                            : const Text(
+                          'Salvar Alterações',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 100), // Espaço para o navbar
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-            ),
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Navbar(currentIndex: 3), // Index para checkup
             ),
           ],
         ),
