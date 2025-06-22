@@ -9,6 +9,7 @@ import 'package:diainfo/features/dashboard/screens/glicemia/glicemia_screen.dart
 import 'package:diainfo/features/dashboard/screens/map/map_screen.dart';
 import 'package:diainfo/features/dashboard/screens/profile/changepass_screen.dart';
 import 'package:diainfo/features/dashboard/screens/profile/profile_screen.dart';
+import 'package:diainfo/features/dashboard/screens/remedy/remedy_screen.dart';
 import 'package:diainfo/utils/theme/theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +43,7 @@ class MyApp extends StatelessWidget {
         '/changepass': (context) => ChangePassScreen(),
         '/glicemia': (context) => GlicemiaScreen(),
         '/map': (context) => MapScreen(),
+        '/remedy':(context) => RemedyScreen(),
         '/checkup': (context) => CheckupScreen(),
         '/checkup/create': (context) => CreateCheckupScreen(),
       },

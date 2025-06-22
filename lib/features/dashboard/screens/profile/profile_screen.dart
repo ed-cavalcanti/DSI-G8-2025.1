@@ -420,7 +420,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             '/map',
             '/glicemia',
             '/checkup',
-            '/profile',
+            '/remedy',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);
         },

@@ -191,7 +191,7 @@ class _MapScreenState extends State<MapScreen> {
             '/map',
             '/glicemia',
             '/checkup',
-            '/profile',
+            '/remedy',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);
         },

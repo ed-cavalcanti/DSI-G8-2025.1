@@ -129,7 +129,7 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
             '/map',
             '/glicemia',
             '/checkup',
-            '/profile',
+            '/remedy',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);
         },

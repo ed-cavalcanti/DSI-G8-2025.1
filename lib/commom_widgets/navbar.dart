@@ -12,7 +12,7 @@ class Navbar extends StatelessWidget {
     PhosphorIcons.mapPin,
     PhosphorIcons.drop,
     PhosphorIcons.pulse,
-    PhosphorIcons.user,
+    PhosphorIcons.pill,
   ];
 
   @override

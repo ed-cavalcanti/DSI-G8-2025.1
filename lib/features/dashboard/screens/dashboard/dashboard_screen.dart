@@ -213,7 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             '/map',
             '/glicemia',
             '/checkup',
-            '/profile',
+            '/remedy',
           ];
           Navigator.pushReplacementNamed(context, routes[index]);
         },
