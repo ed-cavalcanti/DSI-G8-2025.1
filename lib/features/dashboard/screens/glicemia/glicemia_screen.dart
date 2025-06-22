@@ -18,6 +18,38 @@ class GlicemiaScreen extends StatefulWidget {
 
 class _GlicemiaScreenState extends State<GlicemiaScreen> {
   final GlicemiaService _glicemiaService = GlicemiaService();
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedFilter = 'Todos'; // 'Todos', 'Normal', 'Alerta', 'Alto'
+  List<Glicemia> _allGlicemias = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_filterGlicemias);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterGlicemias() {
+    setState(() {});
+  }
+
+  String _getGlicemiaStatus(int value) {
+    if (value >= 100) return 'Alto';
+    if (value >= 95) return 'Alerta';
+    return 'Normal';
+  }
+
+  Color _getGlicemiaColor(int value) {
+    if (value >= 100) return Colors.red;
+    if (value >= 95) return Colors.orangeAccent;
+    return Colors.green;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,24 +64,16 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 100),
-                    SectionHeader(
+                    const SectionHeader(
                       title: "Histórico de glicemia",
                       navigateBack: "/dashboard",
                     ),
                     const SizedBox(height: 30),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Últimos Registros',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
+                    
+                    // Seção de filtros
+                    _buildFilterSection(),
                     const SizedBox(height: 20),
+                    
                     StreamBuilder<List<Glicemia>>(
                       stream: _glicemiaService.getGlicemiaStream(),
                       builder: (context, snapshot) {
@@ -64,31 +88,30 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                         }
 
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Row(
-                            children: [Text('Nenhuma glicemia cadastrada.')],
+                          return const Center(
+                            child: Text('Nenhuma glicemia cadastrada.'),
                           );
                         }
 
-                        List<Glicemia> glicemias = snapshot.data!;
-                        // Inverter ordem para mostrar mais recentes primeiro
-                        glicemias.sort((a, b) => b.date.compareTo(a.date));
+                        _allGlicemias = snapshot.data!;
+                        // Ordenar por data (mais recente primeiro)
+                        _allGlicemias.sort((a, b) => b.date.compareTo(a.date));
+                        
+                        List<Glicemia> filteredGlicemias = _applyFilters(_allGlicemias);
 
                         return ListView.builder(
                           shrinkWrap: true,
                           physics: const ClampingScrollPhysics(),
-                          itemCount: glicemias.length,
+                          itemCount: filteredGlicemias.length,
                           itemBuilder: (context, index) {
-                            Glicemia glicemia = glicemias[index];
-                            Color color = Colors.green;
-                            if (glicemia.value >= 100) {
-                              color = Colors.red;
-                            } else if (glicemia.value >= 95) {
-                              color = Colors.orangeAccent;
-                            }
+                            Glicemia glicemia = filteredGlicemias[index];
+                            Color color = _getGlicemiaColor(glicemia.value);
+                            String status = _getGlicemiaStatus(glicemia.value);
 
                             return _buildGlicemiaItem(
                               glicemia: glicemia,
                               color: color,
+                              status: status,
                             );
                           },
                         );
@@ -98,7 +121,7 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                 ),
               ),
             ),
-            Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
+            const Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
             Positioned(
               bottom: 16,
               left: 30,
@@ -137,9 +160,68 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
     );
   }
 
+  Widget _buildFilterSection() {
+    return Column(
+      children: [
+        // Campo de busca
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Buscar por data...',
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+        const SizedBox(height: 10),
+        
+        // Filtros por status
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: ['Todos', 'Normal', 'Alerta', 'Alto'].map((filter) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(filter),
+                  selected: _selectedFilter == filter,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedFilter = selected ? filter : 'Todos';
+                    });
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Glicemia> _applyFilters(List<Glicemia> glicemias) {
+    final query = _searchController.text.toLowerCase();
+    
+    return glicemias.where((glicemia) {
+      // Filtro por texto (data formatada)
+      final formattedDate = DateFormat('dd/MM - HH:mm').format(glicemia.date.toDate());
+      final matchesSearch = formattedDate.toLowerCase().contains(query);
+      
+      // Filtro por status
+      final matchesFilter = _selectedFilter == 'Todos' || 
+          _getGlicemiaStatus(glicemia.value) == _selectedFilter;
+      
+      return matchesSearch && matchesFilter;
+    }).toList();
+  }
+
   Widget _buildGlicemiaItem({
     required Glicemia glicemia,
     required Color color,
+    required String status,
   }) {
     final String formattedDate = DateFormat('dd/MM - HH:mm').format(glicemia.date.toDate());
 
@@ -168,6 +250,12 @@ class _GlicemiaScreenState extends State<GlicemiaScreen> {
                           style: const TextStyle(fontSize: 14)),
                       const SizedBox(width: 6),
                       CircleAvatar(radius: 6, backgroundColor: color),
+                      const SizedBox(width: 6),
+                      Text('($status)', style: TextStyle(
+                        fontSize: 12,
+                        color: color,
+                        fontWeight: FontWeight.bold,
+                      )),
                     ],
                   ),
                 ],

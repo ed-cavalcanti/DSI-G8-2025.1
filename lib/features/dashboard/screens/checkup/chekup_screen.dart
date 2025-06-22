@@ -17,6 +17,48 @@ class CheckupScreen extends StatefulWidget {
 
 class _CheckupScreenState extends State<CheckupScreen> {
   final CheckupService _checkupService = CheckupService();
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedFilter = 'Todos'; // 'Todos', 'Baixo', 'Moderado', 'Alto'
+  List<Checkup> _allCheckups = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_filterCheckups);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterCheckups() {
+    setState(() {});
+  }
+
+  String _getRiskText(Risk risk) {
+    switch (risk) {
+      case Risk.low:
+        return 'Baixo';
+      case Risk.moderate:
+        return 'Moderado';
+      case Risk.high:
+        return 'Alto';
+    }
+  }
+
+  Color _getRiskColor(Risk risk) {
+    switch (risk) {
+      case Risk.low:
+        return Colors.green;
+      case Risk.moderate:
+        return Colors.orangeAccent;
+      case Risk.high:
+        return Colors.red;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,34 +69,25 @@ class _CheckupScreenState extends State<CheckupScreen> {
           children: [
             SafeArea(
               child: SingleChildScrollView(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 child: Column(
                   children: [
                     const SizedBox(height: 100),
-                    SectionHeader(
+                    const SectionHeader(
                       title: "Histórico de check-ups",
                       navigateBack: "/dashboard",
                     ),
                     const SizedBox(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Últimos Registros',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20.0),
+                    
+                    // Filtros
+                    _buildFilterSection(),
+                    const SizedBox(height: 20),
+                    
                     StreamBuilder<List<Checkup>>(
                       stream: _checkupService.getCheckupStream(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
                         }
 
                         if (snapshot.hasError) {
@@ -66,29 +99,22 @@ class _CheckupScreenState extends State<CheckupScreen> {
                         }
 
                         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                          return const Row(
-                            children: [Text('Nenhum checkup cadastrado.')],
+                          return const Center(
+                            child: Text('Nenhum checkup cadastrado.'),
                           );
                         }
 
-                        List<Checkup> checkups = snapshot.data!;
+                        _allCheckups = snapshot.data!;
+                        List<Checkup> filteredCheckups = _applyFilters(_allCheckups);
 
                         return ListView.builder(
                           shrinkWrap: true,
                           physics: const ClampingScrollPhysics(),
-                          itemCount: checkups.length,
+                          itemCount: filteredCheckups.length,
                           itemBuilder: (context, index) {
-                            Checkup checkup = checkups[index];
-                            Color color = Colors.green;
-                            String riskText = 'Baixo';
-
-                            if (checkup.risk == Risk.high) {
-                              color = Colors.red;
-                              riskText = 'Alto';
-                            } else if (checkup.risk == Risk.moderate) {
-                              color = Colors.orangeAccent;
-                              riskText = 'Moderado';
-                            }
+                            Checkup checkup = filteredCheckups[index];
+                            Color color = _getRiskColor(checkup.risk);
+                            String riskText = _getRiskText(checkup.risk);
 
                             return _buildCheckupItem(
                               checkup: checkup,
@@ -103,7 +129,7 @@ class _CheckupScreenState extends State<CheckupScreen> {
                 ),
               ),
             ),
-            Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
+            const Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
             Positioned(
               bottom: 16.0,
               left: 30.0,
@@ -115,13 +141,10 @@ class _CheckupScreenState extends State<CheckupScreen> {
                 icon: PhosphorIcon(
                   PhosphorIcons.plusCircle(PhosphorIconsStyle.bold),
                 ),
-                label: Text("Cadastrar novo check-up"),
+                label: const Text("Cadastrar novo check-up"),
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 12.0),
-                  minimumSize: Size(
-                    double.infinity,
-                    48,
-                  ), // Botão com largura total
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  minimumSize: const Size(double.infinity, 48),
                 ),
               ),
             ),
@@ -145,14 +168,71 @@ class _CheckupScreenState extends State<CheckupScreen> {
     );
   }
 
+  Widget _buildFilterSection() {
+    return Column(
+      children: [
+        // Campo de busca
+        TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Buscar check-ups...',
+            prefixIcon: const Icon(Icons.search),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
+        const SizedBox(height: 10),
+        
+        // Filtros por risco
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: ['Todos', 'Baixo', 'Moderado', 'Alto'].map((filter) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: FilterChip(
+                  label: Text(filter),
+                  selected: _selectedFilter == filter,
+                  onSelected: (selected) {
+                    setState(() {
+                      _selectedFilter = selected ? filter : 'Todos';
+                    });
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Checkup> _applyFilters(List<Checkup> checkups) {
+    final query = _searchController.text.toLowerCase();
+    
+    return checkups.where((checkup) {
+      // Filtro por texto (data formatada)
+      final formattedDate = DateFormat('dd/MM/yyyy - HH:mm').format(checkup.date.toDate());
+      final matchesSearch = formattedDate.toLowerCase().contains(query) ||
+          _getRiskText(checkup.risk).toLowerCase().contains(query);
+      
+      // Filtro por nível de risco
+      final matchesFilter = _selectedFilter == 'Todos' || 
+          _getRiskText(checkup.risk) == _selectedFilter;
+      
+      return matchesSearch && matchesFilter;
+    }).toList();
+  }
+
   Widget _buildCheckupItem({
     required Checkup checkup,
     required Color color,
     required String riskText,
   }) {
-    final String formattedDate = DateFormat(
-      'dd/MM/yyyy - HH:mm',
-    ).format(checkup.date.toDate());
+    final String formattedDate = DateFormat('dd/MM/yyyy - HH:mm').format(checkup.date.toDate());
     return InkWell(
       onTap: () {
         Navigator.push(
