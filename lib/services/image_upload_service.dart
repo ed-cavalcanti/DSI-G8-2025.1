@@ -17,7 +17,6 @@ class ImageUploadService {
 
   final ImagePicker _picker = ImagePicker();
 
-  /// Seleciona uma imagem da galeria ou câmera
   Future<File?> pickImage({ImageSource source = ImageSource.gallery}) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -36,10 +35,10 @@ class ImageUploadService {
     }
   }
 
-  /// Faz upload da imagem para o Cloudinary
   Future<String> uploadImage(File imageFile, String userId) async {
     try {
-      final String publicId = 'profile_images/user_$userId';
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String publicId = 'profile_images/user_${userId}_$timestamp';
 
       CloudinaryResponse response = await _cloudinary.uploadFile(
         CloudinaryFile.fromFile(
@@ -49,13 +48,19 @@ class ImageUploadService {
         ),
       );
 
-      return response.secureUrl;
+      String imageUrl = response.secureUrl;
+      if (!imageUrl.contains('?')) {
+        imageUrl += '?v=$timestamp';
+      } else {
+        imageUrl += '&v=$timestamp';
+      }
+
+      return imageUrl;
     } catch (e) {
       throw Exception('Erro ao fazer upload da imagem: $e');
     }
   }
 
-  /// Mostra opções para selecionar origem da imagem
   Future<File?> showImageSourceDialog() async {
     // Esta função será chamada pelo widget para mostrar o dialog de seleção
     return null;

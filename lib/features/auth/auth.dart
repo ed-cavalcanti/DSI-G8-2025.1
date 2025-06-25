@@ -48,6 +48,8 @@ class Auth {
     User? user = _firebaseAuth.currentUser;
     if (user != null) {
       await user.updatePhotoURL(photoUrl);
+      await user.reload();
+      user = _firebaseAuth.currentUser;
     }
   }
 

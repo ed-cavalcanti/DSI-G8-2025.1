@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:diainfo/commom_widgets/navbar.dart';
 import 'package:diainfo/features/auth/auth.dart';
 import 'package:diainfo/services/image_upload_service.dart';
@@ -21,7 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _emailController = TextEditingController();
   bool _isSaving = false;
   bool _isUploadingImage = false;
-  File? _selectedImage;
+  Key _avatarKey = UniqueKey();
 
   @override
   void initState() {
@@ -33,45 +34,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  ImageProvider _getProfileImageProvider() {
+    if (_user?.photoURL != null && _user!.photoURL!.isNotEmpty) {
+      final String uniqueUrl =
+          _user!.photoURL!.contains('?')
+              ? '${_user!.photoURL!}&t=${DateTime.now().millisecondsSinceEpoch}'
+              : '${_user!.photoURL!}?t=${DateTime.now().millisecondsSinceEpoch}';
+      return NetworkImage(uniqueUrl);
+    }
+    return const AssetImage('assets/avatar.png') as ImageProvider;
+  }
+
+  void _clearImageCache() {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
+  }
+
   void _showDeleteConfirmation(BuildContext context) {
     final TextEditingController passwordController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar exclusão'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Digite sua senha para confirmar a exclusão da conta. Esta ação não pode ser desfeita.',
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirmar exclusão'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Digite sua senha para confirmar a exclusão da conta. Esta ação não pode ser desfeita.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Senha',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Senha',
-                border: OutlineInputBorder(),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await _deleteAccount(passwordController.text.trim());
+                },
+                child: const Text('Confirmar'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              Navigator.pop(context);
-              await _deleteAccount(passwordController.text.trim());
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -165,30 +183,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showImageSourceDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Selecionar foto'),
-        content: const Text('Escolha a origem da sua foto de perfil:'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _pickAndUploadImage(ImageSource.camera);
-            },
-            child: const Text('Câmera'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Selecionar foto'),
+            content: const Text('Escolha a origem da sua foto de perfil:'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.camera);
+                },
+                child: const Text('Câmera'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _pickAndUploadImage(ImageSource.gallery);
+                },
+                child: const Text('Galeria'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _pickAndUploadImage(ImageSource.gallery);
-            },
-            child: const Text('Galeria'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -198,23 +217,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _isUploadingImage = true;
     });
-
     try {
-      final File? imageFile = await _imageUploadService.pickImage(source: source);
+      final File? imageFile = await _imageUploadService.pickImage(
+        source: source,
+      );
       if (imageFile != null) {
-        setState(() {
-          _selectedImage = imageFile;
-        });
-
         final String imageUrl = await _imageUploadService.uploadImage(
           imageFile,
           _user!.uid,
         );
-
         await _auth.updateProfilePhoto(photoUrl: imageUrl);
 
+        _clearImageCache();
+
+        await Future.delayed(
+          const Duration(milliseconds: 500),
+        );
         setState(() {
           _user = _auth.currentUser;
+          _avatarKey = UniqueKey();
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -259,26 +280,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   GestureDetector(
                     onTap: _showImageSourceDialog,
                     child: CircleAvatar(
+                      key: _avatarKey,
                       radius: 50,
-                      backgroundImage: _selectedImage != null
-                          ? FileImage(_selectedImage!)
-                          : _user?.photoURL != null
-                          ? NetworkImage(_user!.photoURL!)
-                          : const AssetImage('assets/avatar.png') as ImageProvider,
-                      child: _isUploadingImage
-                          ? Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withAlpha(100),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        ),
-                      )
-                          : null,
+                      backgroundImage: _getProfileImageProvider(),
+                      child:
+                          _isUploadingImage
+                              ? Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withAlpha(100),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                              : null,
                     ),
                   ),
                   Positioned(
@@ -330,16 +349,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: _isSaving
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : const Text('Salvar alterações'),
+                  child:
+                      _isSaving
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Text('Salvar alterações'),
                 ),
               ),
               const SizedBox(height: 12),

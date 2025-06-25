@@ -32,22 +32,41 @@ class UserAvatar extends StatelessWidget {
     final String? imageUrl = photoUrl ?? user?.photoURL;
 
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return NetworkImage(imageUrl);
+      // Adiciona um parâmetro único na URL para evitar cache
+      final String uniqueUrl =
+          imageUrl.contains('?')
+              ? '$imageUrl&t=${DateTime.now().millisecondsSinceEpoch}'
+              : '$imageUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+      return NetworkImage(uniqueUrl);
     }
 
     return const AssetImage('assets/avatar.png');
   }
 }
 
-class CurrentUserAvatar extends StatelessWidget {
+class CurrentUserAvatar extends StatefulWidget {
   final double radius;
 
   const CurrentUserAvatar({super.key, this.radius = 25});
 
   @override
+  State<CurrentUserAvatar> createState() => _CurrentUserAvatarState();
+}
+
+class _CurrentUserAvatarState extends State<CurrentUserAvatar> {
+  String? _lastPhotoUrl;
+  Key _imageKey = UniqueKey();
+
+  @override
   Widget build(BuildContext context) {
     final user = Auth().currentUser;
 
-    return UserAvatar(user: user, radius: radius);
+    // Verifica se a URL da foto mudou para forçar reconstrução
+    if (_lastPhotoUrl != user?.photoURL) {
+      _lastPhotoUrl = user?.photoURL;
+      _imageKey = UniqueKey(); // Força reconstrução da imagem
+    }
+
+    return UserAvatar(user: user, radius: widget.radius, key: _imageKey);
   }
 }

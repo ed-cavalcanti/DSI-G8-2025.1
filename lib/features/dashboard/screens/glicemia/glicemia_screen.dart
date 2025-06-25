@@ -19,9 +19,8 @@ class GlicemiaScreen extends StatefulWidget {
 class _GlicemiaScreenState extends State<GlicemiaScreen> {
   final GlicemiaService _glicemiaService = GlicemiaService();
   final TextEditingController _searchController = TextEditingController();
-  String _selectedFilter = 'Todos'; // 'Todos', 'Normal', 'Alerta', 'Alto'
+  String _selectedFilter = 'Todos';
   List<Glicemia> _allGlicemias = [];
-  bool _isLoading = true;
 
   @override
   void initState() {

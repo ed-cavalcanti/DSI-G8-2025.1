@@ -3,16 +3,23 @@ import 'package:diainfo/features/auth/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class AppHeader extends StatelessWidget {
+class AppHeader extends StatefulWidget {
   const AppHeader({super.key});
 
+  @override
+  State<AppHeader> createState() => _AppHeaderState();
+}
+
+class _AppHeaderState extends State<AppHeader> {
   @override
   Widget build(BuildContext context) {
     final User? user = Auth().currentUser;
 
     final String firstName = user?.displayName?.split(' ').first ?? '';
     final String displayName =
-        (firstName.length <= 20 && firstName.isNotEmpty) ? firstName : 'Usuário';
+        (firstName.length <= 20 && firstName.isNotEmpty)
+            ? firstName
+            : 'Usuário';
 
     return Container(
       width: double.infinity,
@@ -29,8 +36,10 @@ class AppHeader extends StatelessWidget {
         children: [
           Image.asset("assets/diainfo-logo.png", height: 50),
           InkWell(
-            onTap: () {
-              Navigator.pushNamed(context, '/profile');
+            onTap: () async {
+              await Navigator.pushNamed(context, '/profile');
+              // Atualiza o header quando retorna da tela de perfil
+              setState(() {});
             },
             borderRadius: BorderRadius.circular(30),
             child: Row(
