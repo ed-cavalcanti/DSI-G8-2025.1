@@ -7,6 +7,13 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   static ThemeData lightTheme = ThemeData(
     brightness: Brightness.light,
+    primarySwatch: Colors.blue,
+    visualDensity: VisualDensity.adaptivePlatformDensity,
+    primaryColor: primaryColor,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: primaryColor,
+      brightness: Brightness.light,
+    ),
     textTheme: TextTheme(
       titleSmall: GoogleFonts.inter(color: textPrimaryColor),
       titleMedium: GoogleFonts.inter(color: textPrimaryColor, fontSize: 24),

@@ -1,11 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:diainfo/commom_widgets/app_header.dart';
 import 'package:diainfo/commom_widgets/navbar.dart';
+import 'package:diainfo/constants/colors.dart';
 import 'package:diainfo/constants/sizes.dart';
 import 'package:diainfo/models/remedy.dart';
 import 'package:diainfo/services/remedy_service.dart';
+import 'package:flutter/material.dart';
 
 class RemedyScreen extends StatefulWidget {
   const RemedyScreen({super.key});
@@ -15,6 +16,7 @@ class RemedyScreen extends StatefulWidget {
 }
 
 class _RemedyScreenState extends State<RemedyScreen> {
+  final List<Remedy> _allRemedies = [];
   final List<Remedy> _filteredRemedies = [];
   final TextEditingController _searchController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -22,7 +24,7 @@ class _RemedyScreenState extends State<RemedyScreen> {
   final _typeController = TextEditingController();
   final _dosageController = TextEditingController();
   final _frequencyController = TextEditingController();
-  
+
   String _selectedFilter = 'Todos';
   bool _isEditing = false;
   String _editingId = '';
@@ -40,30 +42,34 @@ class _RemedyScreenState extends State<RemedyScreen> {
     _remediesSubscription = RemedyService().remediesStream.listen(
       (remedies) {
         setState(() {
-          _filterRemedies(remedies);
+          _allRemedies.clear();
+          _allRemedies.addAll(remedies);
+          _filterRemedies();
           _isLoading = false;
         });
       },
       onError: (error) {
         setState(() => _isLoading = false);
         _showErrorSnackbar('Erro ao carregar remédios: $error');
-      }
+      },
     );
   }
 
-  void _filterRemedies([List<Remedy>? remedies]) {
-    final allRemedies = remedies ?? _filteredRemedies;
+  void _filterRemedies() {
     final query = _searchController.text.toLowerCase();
-    
+
     setState(() {
       _filteredRemedies.clear();
-      _filteredRemedies.addAll(allRemedies.where((remedy) {
-        final matchesSearch = remedy.name.toLowerCase().contains(query) ||
-            remedy.type.toLowerCase().contains(query);
-        final matchesFilter = _selectedFilter == 'Todos' || 
-            remedy.type == _selectedFilter;
-        return matchesSearch && matchesFilter;
-      }));
+      _filteredRemedies.addAll(
+        _allRemedies.where((remedy) {
+          final matchesSearch =
+              remedy.name.toLowerCase().contains(query) ||
+              remedy.type.toLowerCase().contains(query);
+          final matchesFilter =
+              _selectedFilter == 'Todos' || remedy.type == _selectedFilter;
+          return matchesSearch && matchesFilter;
+        }),
+      );
     });
   }
 
@@ -219,26 +225,27 @@ class _RemedyScreenState extends State<RemedyScreen> {
   void _confirmDelete(String id) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirmar Exclusão'),
-        content: const Text('Tem certeza que deseja excluir este remédio?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Confirmar Exclusão'),
+            content: const Text('Tem certeza que deseja excluir este remédio?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              TextButton(
+                onPressed: () {
+                  _deleteRemedy(id);
+                  Navigator.pop(context);
+                },
+                child: const Text(
+                  'Excluir',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              _deleteRemedy(id);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'Excluir',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -252,10 +259,7 @@ class _RemedyScreenState extends State<RemedyScreen> {
 
   void _showErrorSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -278,15 +282,16 @@ class _RemedyScreenState extends State<RemedyScreen> {
         children: [
           const Positioned(top: 0, left: 0, right: 0, child: AppHeader()),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildContent(),
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildContent(),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showRemedyForm(),
-        backgroundColor: Theme.of(context).primaryColor,
+        backgroundColor: primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: Navbar(
@@ -322,14 +327,13 @@ class _RemedyScreenState extends State<RemedyScreen> {
   Widget _buildSearchAndFilter() {
     return Column(
       children: [
+        SizedBox(height: 20),
         TextField(
           controller: _searchController,
           decoration: InputDecoration(
             hintText: 'Pesquisar remédios...',
             prefixIcon: const Icon(Icons.search),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             filled: true,
             fillColor: Colors.grey[100],
           ),
@@ -338,22 +342,24 @@ class _RemedyScreenState extends State<RemedyScreen> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: ['Todos', 'Analgésico', 'Antibiótico', 'Anti-hipertensivo']
-                .map((type) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: FilterChip(
-                  label: Text(type),
-                  selected: _selectedFilter == type,
-                  onSelected: (selected) {
-                    setState(() {
-                      _selectedFilter = selected ? type : 'Todos';
-                      _filterRemedies();
-                    });
+            children:
+                ['Todos', 'Analgésico', 'Antibiótico', 'Anti-hipertensivo'].map(
+                  (type) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(type),
+                        selected: _selectedFilter == type,
+                        onSelected: (selected) {
+                          setState(() {
+                            _selectedFilter = selected ? type : 'Todos';
+                            _filterRemedies();
+                          });
+                        },
+                      ),
+                    );
                   },
-                ),
-              );
-            }).toList(),
+                ).toList(),
           ),
         ),
       ],
@@ -378,7 +384,6 @@ class _RemedyScreenState extends State<RemedyScreen> {
         ),
       );
     }
-
     return ListView.builder(
       itemCount: _filteredRemedies.length,
       itemBuilder: (context, index) {
@@ -389,51 +394,51 @@ class _RemedyScreenState extends State<RemedyScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(15),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      remedy.name,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+          child: InkWell(
+            onTap: () => _showRemedyForm(remedy: remedy),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        remedy.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          onPressed: () => _showRemedyForm(remedy: remedy),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          size: 20,
+                          color: Colors.redAccent,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 20),
-                          onPressed: () => _confirmDelete(remedy.id),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tipo: ${remedy.type}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Dosagem: ${remedy.dosage}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  'Frequência: ${remedy.frequency}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
+                        onPressed: () => _confirmDelete(remedy.id),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Tipo: ${remedy.type}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Dosagem: ${remedy.dosage}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    'Frequência: ${remedy.frequency}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
           ),
         );

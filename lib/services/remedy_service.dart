@@ -1,41 +1,53 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:diainfo/features/auth/auth.dart';
 import 'package:diainfo/models/remedy.dart';
 
 class RemedyService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _auth = Auth();
 
-  // Referência à coleção de remédios do usuário
-  CollectionReference get _userRemedies {
+  CollectionReference get _remediesCollection =>
+      _firestore.collection('remedies');
+
+  Future<void> addRemedy(Remedy remedy) async {
     final userId = _auth.currentUser?.uid;
     if (userId == null) throw Exception('Usuário não autenticado');
-    return _firestore.collection('users').doc(userId).collection('remedies');
+
+    final remedyData = remedy.toMap();
+    remedyData['userId'] = userId;
+
+    await _remediesCollection.add(remedyData);
   }
 
-  // Adiciona um novo remédio
-  Future<void> addRemedy(Remedy remedy) async {
-    await _userRemedies.add(remedy.toMap());
-  }
-
-  // Atualiza um remédio existente
   Future<void> updateRemedy(Remedy remedy) async {
     if (remedy.id.isEmpty) throw Exception('ID do remédio não pode ser vazio');
-    await _userRemedies.doc(remedy.id).update(remedy.toMap());
+    await _remediesCollection.doc(remedy.id).update(remedy.toMap());
   }
 
-  // Remove um remédio
   Future<void> deleteRemedy(String id) async {
-    await _userRemedies.doc(id).delete();
+    await _remediesCollection.doc(id).delete();
   }
 
-  // Stream de todos os remédios em tempo real
   Stream<List<Remedy>> get remediesStream {
-    return _userRemedies
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      return Stream.value([]);
+    }
+
+    return _remediesCollection
+        .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Remedy.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map(
+                    (doc) => Remedy.fromMap(
+                      doc.id,
+                      doc.data() as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList(),
+        );
   }
 }
